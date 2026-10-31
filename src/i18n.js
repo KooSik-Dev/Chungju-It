@@ -1,5 +1,17 @@
 // 문구만 번역하며 신고 ID, 필터 값, 입력한 내용은 변경하지 않습니다.
 const translations = {
+ '검색어 지우기':'Clear search',
+ '민감한 개인정보는 입력하지 마세요.':'Please do not enter sensitive personal information.',
+ '임시 글을 불러왔어요':'Your draft is back',
+ '작성 중인 내용은 이 탭에 저장돼요':'Your draft stays in this tab',
+ '사진은 임시 저장되지 않아요. 탭을 닫으면 임시 글이 사라집니다.':'Photos are not saved in drafts. Closing this tab removes the draft.',
+ '임시 글 지우기':'Clear draft',
+ '이 탭에 임시 저장했어요. 사진은 저장되지 않아요.':'Draft saved in this tab. Photos are not saved.',
+ '임시 저장이 차단되어 새로고침하면 사라질 수 있어요.':'Draft storage is blocked; it may be lost on reload.',
+ '작성 중인 임시 글을 지울까요? 선택한 사진도 지워집니다.':'Clear this draft? The selected photo will also be removed.',
+ '임시 글을 지웠어요.':'Draft cleared.',
+ '기본 좌표는 임시 글에 저장된 위치입니다. 저장 전 실제 위치를 확인하세요.':'The draft location is selected. Please check it before saving.',
+
  '우리 동네 공감 플랫폼':'A community built together',
  '작은 불편이 모여':'Small voices,','더 좋은 동네로.':'a better neighborhood.',
  '이웃의 이야기를 살펴보고, 함께 공감해요.':'Explore local stories and show your support.',
