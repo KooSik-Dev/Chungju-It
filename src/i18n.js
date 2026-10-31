@@ -1,5 +1,6 @@
 // 문구만 번역하며 신고 ID, 필터 값, 입력한 내용은 변경하지 않습니다.
 const translations = {
+ 'AI 예시 이미지':'AI-generated example image',
  '우리 동네 이야기 지도':'Neighborhood story map',
  '지금 주목받는 이야기':'Stories people care about',
  '공감 모집 중 TOP 3':'TOP 3 open for support',
