@@ -1,5 +1,21 @@
 // 문구만 번역하며 신고 ID, 필터 값, 입력한 내용은 변경하지 않습니다.
 const translations = {
+ '충주잇다 기록으로 저장되며 시청에 접수되지 않습니다.':'Saved as a Chungju Itda record; not submitted to City Hall.',
+ '신고 저장하기':'Save report',
+ '폴더 선택':'Choose folder','폴더 변경':'Change folder','저장 폴더':'Storage folder',
+ '회원가입':'Sign up','비밀번호':'Password','비밀번호 확인':'Confirm password','가입하고 시작하기':'Create account',
+ '다시 만나서 반가워요':'Welcome back','우리 함께 시작해요':'Let’s get started',
+ '계정별 활동은 선택한 폴더에 따로 저장됩니다.':'Each account’s activity is saved separately in the selected folder.',
+ '먼저 저장할 폴더를 선택해 주세요.':'Choose a storage folder first.',
+ '이름':'Name','이름을 입력해 주세요':'Enter your name','8자 이상 입력해 주세요':'Enter at least 8 characters','비밀번호를 다시 입력해 주세요':'Enter your password again',
+ '비밀번호를 잊으면 복구할 수 없어요. 폴더에 직접 접근하는 사람은 파일을 볼 수 있으니 안전하게 보관해 주세요.':'Passwords cannot be recovered. Anyone with access to the folder can see its files, so keep it safe.',
+ '이미 계정이 있나요? 로그인':'Already have an account? Log in','처음 오셨나요? 회원가입':'New here? Sign up',
+ '먼저 저장 폴더를 선택해 주세요.':'Choose a storage folder first.','비밀번호 확인이 일치하지 않아요.':'The passwords do not match.',
+ '이름 또는 비밀번호가 올바르지 않습니다.':'Incorrect name or password.','이미 사용 중인 이름입니다.':'That name is already in use.',
+ '내 계정':'My account','저장 폴더:':'Storage folder:',
+ '신고 사진은 img 폴더에, 계정과 활동은 data 폴더에 저장됩니다.':'Report photos are saved in img; accounts and activity are saved in data.',
+
+ '폴더에 저장됨':'Saved to folder','폴더에 저장 중…':'Saving to folder…','다시 저장':'Retry saving',
  '필터를 초기화하고 선택한 위치를 보여드려요.':'Filters cleared to show the selected location.',
  '사진을 읽지 못했어요. 다시 선택해 주세요.':'Could not read the photo. Please choose it again.',
  '내 위치로 이동':'Go to my location','내 위치':'My location',

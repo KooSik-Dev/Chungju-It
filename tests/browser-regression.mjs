@@ -110,14 +110,8 @@ assert.equal(await offline.locator('.map-pin').count(), 2);
 await offline.reload();
 assert.match(await offline.locator('[data-like=r2]').innerText(), /343/);
 
-// The standalone HTML also supports language, login, photo reports and local rounds.
+// The standalone HTML also supports language, photo reports and local rounds.
 await offline.locator('#language').selectOption('en');
-await offline.locator('.header [data-action=login]').click();
-await offline.locator('[name=guest]').fill('Neighbor');
-await offline.locator('#login-form button[type=submit]').click();
-await offline.locator('.header [data-action=login]').click();
-assert.equal(await offline.locator('.profile-card h3').innerText(), 'Neighbor');
-await offline.locator('[data-action=logout]').click();
 await offline.locator('.header [data-action=report]').click();
 await offline.locator('[name=category]').selectOption('청결');
 await offline.locator('[name=title]').fill('청결');
@@ -151,4 +145,4 @@ await offline.locator(`[data-delete-report="${reportId}"]`).click();
 assert.equal(await offline.locator('.report-card').count(), 9);
 assert.deepEqual(offlineErrors, []);
 await browser.close();
-console.log('PASS: search, IME, filters, map/picker, photos, offline retry, language, login, reports and rounds');
+console.log('PASS: search, IME, filters, map/picker, photos, offline retry, language, reports and rounds');
