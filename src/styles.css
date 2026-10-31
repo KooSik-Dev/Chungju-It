@@ -115,3 +115,9 @@ body.modal-open{overflow:hidden}.modal{overscroll-behavior:contain}.map-controls
 .report-api-status:not(:empty){margin:12px 0;padding:12px 14px;border-radius:12px;background:#eef5ff;color:#2859a6;font-size:13px;line-height:1.5}
 .report-api-status[data-state="error"]{background:#fff1f1;color:#a6222b}
 #report-form.sending .picker-wrap{pointer-events:none;opacity:.7}
+
+/* Persistent connection status: failures never masquerade as an empty list. */
+.remote-bar{display:flex;align-items:center;justify-content:center;gap:12px;padding:9px 20px;background:#eef4ff;color:#284c84;font-size:13px;line-height:1.4;flex-wrap:wrap}
+.remote-bar [data-status=error]{color:#a23c31}
+.remote-bar button{border:1px solid #c4d5f1;border-radius:999px;background:#fff;color:#2458a4;padding:5px 12px;font-weight:700;cursor:pointer}
+#comment-api-status,#name-api-status{color:#a23c31;font-size:13px}

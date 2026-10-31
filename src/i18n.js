@@ -1,5 +1,17 @@
 // 문구만 번역하며 신고 ID, 필터 값, 입력한 내용은 변경하지 않습니다.
 const translations = {
+ '목록 새로고침':'Refresh list','신고를 불러오는 중…':'Loading reports…','목록을 불러오는 중…':'Loading the list…','목록이 연결되었습니다.':'List connected.',
+ '표시명 설정':'Set display name','표시명':'Display name','표시명 사용':'Save display name',
+ '어떻게 불러드릴까요?':'What should we call you?','이름은 공개 댓글에 표시됩니다.':'Your name appears on public comments.',
+ '이름은 로그인이나 본인 인증이 아닙니다. 비밀번호와 개인정보를 입력하지 마세요.':'A display name is not a login or identity verification. Do not enter passwords or personal information.',
+ '신고와 사진은 공개되며 누구나 수정·삭제할 수 있습니다. 시청에는 접수되지 않습니다.':'Reports and photos are public and anyone can edit or delete them. They are not submitted to City Hall.',
+ '공개된 신고 · 누구나 수정하거나 삭제할 수 있습니다.':'Public report · anyone can edit or delete it.',
+ '댓글과 표시명은 공개되며 누구나 삭제할 수 있습니다. 개인정보를 입력하지 마세요.':'Comments and display names are public; anyone can delete them. Do not enter personal information.',
+ '공개 댓글':'Public comments','공개 댓글을 입력하세요':'Enter a public comment',
+ '함께 모은 이야기':'Community stories','시민 공감 현황':'Community support','회차 보기 →':'View round →','시민 공감 회차':'Community support round',
+ '공개된 신고와 공감을 기준으로 집계합니다.':'Based on public reports and support.',
+ '회차는 공개 설정입니다. 누구나 변경할 수 있으며 종료는 버튼을 눌러 기록합니다. 공감은 인증되지 않은 공개 기록입니다.':'Rounds are public; anyone can change them. Closing a round requires pressing the button. Support is public and unauthenticated.',
+
  '이 브라우저의 기록을 삭제할까요? 이미 관리자에게 전송된 내용은 삭제되지 않습니다.':'Delete this browser’s record? Content already sent to the administrator will remain.',
 
  '신고 내용과 사진은 사이트 관리자에게 전달되며 시청에는 접수되지 않습니다.':'Your report and photo go to the site administrator, not City Hall.',
