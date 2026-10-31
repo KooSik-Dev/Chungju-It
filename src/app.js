@@ -4,7 +4,7 @@ import * as maplibregl from 'maplibre-gl';
 import mapWorker from 'maplibre-gl/dist/maplibre-gl-worker.mjs?raw';
 let workerUrl;
 function prepareMapWorker(){ if(!workerUrl){ workerUrl=URL.createObjectURL(new Blob([mapWorker],{type:'text/javascript'})); maplibregl.setWorkerUrl(workerUrl); } }
-import { categories, statuses, initialReports, imageFor } from './data.js';
+import { categories, statuses, initialReports, imageFor, correctSeedCoordinates } from './data.js';
 import { createRound, validRound, closeRound, remaining, topThree, roundDurations } from './rounds.js';
 import { translateText, translateElement } from './i18n.js';
 import { exampleDetail } from './example-details.js';
@@ -44,7 +44,7 @@ function load() {
   const raw=localStorage.getItem(storeKey); if(!raw) return {reports:JSON.parse(JSON.stringify(initialReports)), liked:[], favorites:[], comments:{}, guest:'충주시민5624'};
   const data=JSON.parse(raw);
   if(!Array.isArray(data.reports) || !data.reports.length || !data.reports.every(r=>r && typeof r.id==='string' && typeof r.title==='string' && typeof r.location==='string' && categories.includes(r.category) && statuses.includes(r.status) && Number.isFinite(r.likes) && Number.isFinite(r.lat) && Number.isFinite(r.lng) && (r.image === undefined || typeof r.image === 'string') && (r.detail === undefined || typeof r.detail === 'string'))) throw Error('invalid');
-  return {reports:data.reports,liked:Array.isArray(data.liked)?data.liked.filter(x=>typeof x==='string'):[],favorites:Array.isArray(data.favorites)?data.favorites.filter(x=>typeof x==='string'):[],comments:data.comments&&typeof data.comments==='object'&&!Array.isArray(data.comments)?Object.fromEntries(Object.entries(data.comments).filter(([id, notes])=>typeof id==='string'&&Array.isArray(notes)).map(([id, notes])=>[id,notes.filter(n=>n&&typeof n.text==='string'&&typeof n.author==='string')])):{},guest:typeof data.guest==='string'&&data.guest.trim()?data.guest:'충주시민5624'};
+  return {reports:data.reports.map(correctSeedCoordinates),liked:Array.isArray(data.liked)?data.liked.filter(x=>typeof x==='string'):[],favorites:Array.isArray(data.favorites)?data.favorites.filter(x=>typeof x==='string'):[],comments:data.comments&&typeof data.comments==='object'&&!Array.isArray(data.comments)?Object.fromEntries(Object.entries(data.comments).filter(([id, notes])=>typeof id==='string'&&Array.isArray(notes)).map(([id, notes])=>[id,notes.filter(n=>n&&typeof n.text==='string'&&typeof n.author==='string')])):{},guest:typeof data.guest==='string'&&data.guest.trim()?data.guest:'충주시민5624'};
  } catch { return {reports:JSON.parse(JSON.stringify(initialReports)),liked:[],favorites:[],comments:{},guest:'충주시민5624'}; }
 }
 let data=load();
