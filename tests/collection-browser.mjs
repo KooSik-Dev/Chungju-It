@@ -16,6 +16,7 @@ async function prepare(){
   assert.match(req.headers().authorization||'',/^Bearer [a-f0-9]+$/);requests.push({method,url:url.pathname+url.search,body:req.postData()});
   const send=(obj,status=200)=>route.fulfill({status,headers,contentType:'application/json',body:JSON.stringify(obj)});
   if(url.pathname.endsWith('/upload')){uploaded++;return send({ok:true,url:'/public/test.png'});}
+  if(url.pathname.includes('/protected/'))return send({ok:true,items:[],next_offset:null});
   const match=url.pathname.match(/\/collections\/([^/]+)(?:\/([^/]+))?$/);if(!match)return send({error:'not found'},404);
   const [,col,rawId]=match;const list=db[col];assert.ok(list);const id=rawId&&decodeURIComponent(rawId),item=list.find(x=>x.id===id);
   if(method==='GET'&&!id){if(mode==='load401'){mode='';return send({error:'unauthorized'},401);}const offset=Number(url.searchParams.get('offset')),limit=Number(url.searchParams.get('limit'));return send({ok:true,items:list.slice(offset,offset+limit),next_offset:offset+limit<list.length?offset+limit:null});}
@@ -40,8 +41,8 @@ const b=await prepare(),q=b.page;await q.locator('[data-detail="item-1"]').first
 await q.locator('.detail-actions [data-like]').click();await q.locator('.detail-actions .liked').waitFor();assert.equal(db.supports.length,1);await q.locator('.detail-actions [data-like]').click();assert.equal(db.supports.length,1);
 await q.locator('.detail-actions [data-favorite="item-1"]').click();await q.locator('.detail-save.is-saved').waitFor();assert.equal(db.favorites.length,1);
 await q.locator('#note-form input').fill('함께 확인해요');await q.locator('#note-form [type=submit]').click();await q.locator('.notes').filter({hasText:'함께 확인해요'}).waitFor();assert.equal(db.comments.length,1);
-// Shared display name and round settings are persisted, without passwords or authentication.
-await q.locator('.modal-head button').click();await q.locator('.header [data-action=login]').click();assert.equal(await q.locator('input[type=password]').count(),0);await q.locator('#name-form [name=guest]').fill('충주 이웃');await q.locator('#name-form [type=submit]').click();await q.locator('.modal').waitFor({state:'detached'});assert.equal(db.profiles[0].data.name,'충주 이웃');
+// Shared round settings remain available to guests.
+await q.locator('.modal-head button').click();
 await q.locator('[data-action=rounds]').first().click();await q.locator('[data-action=start-round]').click();await q.locator('[data-action=finish-round]').waitFor();assert.equal(db.rounds.length,1);await q.locator('#round-duration').selectOption('14');await q.waitForFunction(()=>document.querySelector('#round-duration')?.value==='14');await q.waitForTimeout(100);assert.equal(db.rounds[0].data.nextDays,14);await q.locator('[data-action=finish-round]').click();await q.waitForFunction(()=>document.querySelector('.round-banner h3')?.textContent.includes('2회'));assert.equal(db.rounds[0].data.history.length,1);await q.locator('.modal-head button').click();
 await q.locator('[data-detail="item-1"]').first().click();
 // Conflict must keep the editing input and merge fields from the latest record on explicit retry.

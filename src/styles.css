@@ -121,3 +121,5 @@ body.modal-open{overflow:hidden}.modal{overscroll-behavior:contain}.map-controls
 .remote-bar [data-status=error]{color:#a23c31}
 .remote-bar button{border:1px solid #c4d5f1;border-radius:999px;background:#fff;color:#2458a4;padding:5px 12px;font-weight:700;cursor:pointer}
 #comment-api-status,#name-api-status{color:#a23c31;font-size:13px}
+.header-actions .login span{max-width:10em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#auth-form .secondary.full{margin-top:10px}
