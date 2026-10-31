@@ -1,5 +1,10 @@
 // 문구만 번역하며 신고 ID, 필터 값, 입력한 내용은 변경하지 않습니다.
 const translations = {
+ '우리 동네 이야기 지도':'Neighborhood story map',
+ '지금 주목받는 이야기':'Stories people care about',
+ '공감 모집 중 TOP 3':'TOP 3 open for support',
+ '공감 TOP 3':'Top 3','다른 상태':'Other statuses','지도에서 보기':'View on map',
+
  '공감이 모이는 이야기':'Stories gathering support',
  '우리 동네에서 관심을 받고 있는 신고를 만나보세요.':'Discover the issues your community cares about.',
  '회차 보기':'View rounds','안내':'Note','예시 안내':'Example data',
