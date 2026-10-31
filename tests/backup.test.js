@@ -1,0 +1,12 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { validateBackup } from '../src/backup.js';
+import { categories, statuses, initialReports, imageFor } from '../src/data.js';
+const imageNames = Object.values(imageFor);
+const make = () => ({format:'chungju-eatda-backup',version:1,data:{reports:structuredClone(initialReports),liked:['r1'],favorites:['r2'],comments:{r1:[{text:'A private note',author:'Guest',createdAt:1}]},guest:'Guest'}});
+const check = value => validateBackup(value,categories,statuses,imageNames);
+test('valid backup is copied and preserves local data',()=>{const b=make(),v=check(b);assert.equal(v.reports.length,9);assert.deepEqual(v.favorites,['r2']);assert.equal(v.comments.r1[0].text,'A private note');b.data.reports[0].title='changed';assert.notEqual(v.reports[0].title,'changed');});
+test('test reports and inline photos round-trip',()=>{const b=make();b.data.reports.unshift({id:'test-1-xyz',category:'가로등',status:'공감모집',title:'Test',location:'Here',detail:'Details',image:'data:image/png;base64,YWJj',likes:0,lat:36,lng:127,test:true,createdAt:1});assert.equal(check(b).reports[0].image,'data:image/png;base64,YWJj');});
+test('rejects malformed files and duplicates',()=>{const bad=[{}, {...make(),version:2}];const dup=make();dup.data.reports.push(dup.data.reports[0]);bad.push(dup);const wrong=make();wrong.data.liked.push('missing');bad.push(wrong);for(const b of bad)assert.throws(()=>check(b));});
+test('rejects unsafe and corrupt properties',()=>{for(const patch of [{id:'__proto__'},{lat:NaN},{lng:0},{likes:-1},{category:'fake'},{image:'https://example.com/a.png'},{image:'data:image/png;base64,<script>'}]){const b=make();Object.assign(b.data.reports[0],patch);assert.throws(()=>check(b));}});
+test('strips unexpected fields instead of trusting them',()=>{const b=make();b.data.reports[0].html='<script>';b.data.comments.r1[0].ignored='ignored';const v=check(b);assert.equal(v.reports[0].html,undefined);assert.equal(v.comments.r1[0].ignored,undefined);});
