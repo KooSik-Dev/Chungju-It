@@ -11,6 +11,15 @@ const browser = await chromium.launch({
   args:['--no-sandbox','--disable-dev-shm-usage','--enable-webgl','--use-angle=swiftshader','--enable-unsafe-swiftshader',...(process.env.CHROMIUM_SINGLE_PROCESS === '1' ? ['--single-process','--no-zygote'] : [])],
   ...(process.env.CHROMIUM_PATH ? {executablePath:process.env.CHROMIUM_PATH} : {})
 });
+
+async function mockPageApi(page){
+ await page.route('https://www.koosik.kr/**',async route=>{
+  const request=route.request(),headers={'access-control-allow-origin':'*','access-control-allow-headers':'authorization,content-type','access-control-allow-methods':'POST,OPTIONS,GET'};
+  if(request.method()==='OPTIONS')return route.fulfill({status:204,headers});
+  if(request.method()==='POST')return route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify(request.url().endsWith('/upload')?{url:'/public/mock.png'}:{ok:true})});
+  return route.fulfill({status:200,headers,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a8XcAAAAASUVORK5CYII=','base64')});
+ });
+}
 const page = await browser.newPage({viewport:{width:390,height:800},reducedMotion:'reduce'});
 const errors = [];
 page.on('pageerror', error => errors.push(error.message));
@@ -21,6 +30,7 @@ await page.route('https://tiles.openfreemap.org/styles/positron', async route =>
   if(requests === 2) await pickerWait;
   await route.fulfill({status:200,headers:{'access-control-allow-origin':'*'},contentType:'application/json',body:style});
 });
+await mockPageApi(page);
 await page.goto(app);
 await page.locator('.report-card').first().waitFor();
 
@@ -97,6 +107,7 @@ const offlineErrors = [];
 offline.on('pageerror', error => offlineErrors.push(error.message));
 offline.on('dialog', dialog => dialog.accept());
 await offline.route('https://tiles.openfreemap.org/styles/positron', route => failMap ? route.abort() : route.fulfill({status:200,headers:{'access-control-allow-origin':'*'},contentType:'application/json',body:style}));
+await mockPageApi(offline);
 await offline.goto(app);
 await offline.locator('#map-error-title').filter({hasText:'지도를 불러올 수 없어요'}).waitFor();
 await offline.locator('#search').fill('가로등');

@@ -1,5 +1,14 @@
 // 문구만 번역하며 신고 ID, 필터 값, 입력한 내용은 변경하지 않습니다.
 const translations = {
+ '이 브라우저의 기록을 삭제할까요? 이미 관리자에게 전송된 내용은 삭제되지 않습니다.':'Delete this browser’s record? Content already sent to the administrator will remain.',
+
+ '신고 내용과 사진은 사이트 관리자에게 전달되며 시청에는 접수되지 않습니다.':'Your report and photo go to the site administrator, not City Hall.',
+ '비밀번호나 민감한 개인정보는 입력하지 마세요.':'Do not enter passwords or sensitive personal information.',
+ '업로드한 사진은 관리자에게 전달됩니다.':'Uploaded photos are sent to the site administrator.',
+ '신고 전송하기':'Send report','수정 내용 전송':'Send changes',
+ '신고를 전송하고 있어요…':'Sending your report…','사진을 업로드하고 있어요…':'Uploading your photo…','신고 내용을 전송하고 있어요…':'Sending report details…',
+ '신고를 관리자에게 전송했어요.':'Report sent to the administrator.',
+
  '이름과 비밀번호로 내 계정을 이용해요.':'Use your account with a name and password.',
  '비밀번호는 찾을 수 없으니 꼭 기억해 주세요. 계정과 기록은 이 브라우저에 보관됩니다.':'Keep your password safe; it cannot be recovered. Your account and records stay in this browser.',
  '이 브라우저의 계정':'Account in this browser',

@@ -11,6 +11,17 @@ const server=createServer((request,response)=>{response.writeHead(200,{'content-
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const appUrl=`http://127.0.0.1:${server.address().port}/`;
 const browser = await chromium.launch({args:['--no-sandbox','--disable-dev-shm-usage','--enable-webgl','--use-angle=swiftshader','--enable-unsafe-swiftshader',...(process.env.CHROMIUM_SINGLE_PROCESS==='1'?['--single-process','--no-zygote']:[])],...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{})});
+
+async function mockPageApi(page){
+ const posts=[];
+ await page.route('https://www.koosik.kr/**',async route=>{
+  const request=route.request(),headers={'access-control-allow-origin':'*','access-control-allow-headers':'authorization,content-type','access-control-allow-methods':'POST,OPTIONS,GET'};
+  if(request.method()==='OPTIONS')return route.fulfill({status:204,headers});
+  if(request.method()==='POST'){posts.push({url:request.url(),body:request.postData()});return route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify(request.url().endsWith('/upload')?{url:'/public/mock.png'}:{ok:true})});}
+  return route.fulfill({status:200,headers,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a8XcAAAAASUVORK5CYII=','base64')});
+ });
+ return posts;
+}
 const page=await browser.newPage({viewport:{width:1200,height:900},reducedMotion:'reduce'});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
 await page.addInitScript(() => {
@@ -21,6 +32,7 @@ await page.addInitScript(() => {
   };
 });
 await page.route('https://tiles.openfreemap.org/styles/positron',route=>route.fulfill({status:200,headers:{'access-control-allow-origin':'*'},contentType:'application/json',body:JSON.stringify({version:8,sources:{},layers:[]})}));
+const pagePosts=await mockPageApi(page);
 await page.goto(appUrl);
 await page.locator('.header [data-action=login]').click();
 await page.locator('[data-action=auth-mode]').click();
@@ -29,6 +41,7 @@ await page.locator('[name=password]').fill('password123');
 await page.locator('[name=confirm]').fill('password123');
 await page.locator('#account-form button[type=submit]').click();
 await page.locator('.header .signed-in').waitFor();
+assert.equal(pagePosts.length,0,'signup must not transmit credentials');
 const readBrowserFile = path => page.evaluate(async path => {
  const parts=path.split('/'),name=parts.pop();let current=await navigator.storage.getDirectory();
  for(const dir of parts)current=await current.getDirectoryHandle(dir);
@@ -54,10 +67,12 @@ await page.locator('#photo-preview:not(.hidden)').waitFor();
 await page.locator('#report-form button[type=submit]').click();
 await page.locator('.modal').waitFor({state:'detached'});
 await page.locator('.folder-save-bar [data-folder-save-status]').filter({hasText:'저장됨'}).waitFor();
+assert.ok(pagePosts.some(item=>!item.url.endsWith('/upload')&&JSON.parse(item.body||'null')?.type==='report.created'));
+assert.ok(!pagePosts.some(item=>(item.body||'').includes('password123')));
 const recordText=await readBrowserFile(`data/users/${id}.json`);
 const record=JSON.parse(recordText);
 const report=record.data.reports.find(r=>r.title==='테스트 사진 신고');
-assert.ok(report);assert.match(report.image,/^img\/[a-f0-9]{64}\.png$/);assert.ok((await readBrowserFile(report.image)).length>0);assert.ok(record.data.liked.includes('r2'));
+assert.ok(report);assert.equal(report.image,'https://www.koosik.kr/public/mock.png');assert.ok(record.data.liked.includes('r2'));
 assert.ok(!recordText.includes('data:image'));
 
 // Folder write failure is visible and logout is blocked until retry succeeds.
@@ -84,7 +99,7 @@ await page.locator('#account-form button[type=submit]').click();
 await page.locator('.header .signed-in').waitFor();
 assert.equal(await page.locator('.report-card').filter({hasText:'테스트 사진 신고'}).count(),1);
 assert.match(await page.locator('[data-like=r3]').first().getAttribute('class'),/liked/);
-assert.match(await page.locator('.report-card').filter({hasText:'테스트 사진 신고'}).locator('img').first().getAttribute('src'),/^data:image\/png/);
+assert.equal(await page.locator('.report-card').filter({hasText:'테스트 사진 신고'}).locator('img').first().getAttribute('src'),'https://www.koosik.kr/public/mock.png');
 // A second account has separate activity and duplicate names are rejected.
 await page.locator('.header [data-action=login]').click();
 await page.locator('[data-action=logout]').click();
@@ -114,6 +129,7 @@ assert.deepEqual(errors,[]);
 // file:// does not expose OPFS in Chromium; the no-picker IndexedDB fallback must persist too.
 const local=await browser.newPage({viewport:{width:1024,height:768}});
 await local.route('https://tiles.openfreemap.org/styles/positron',route=>route.abort());
+await mockPageApi(local);
 await local.goto(pathToFileURL(resolve('dist/index.html')).href);
 await local.locator('.header [data-action=login]').click();
 await local.locator('[data-action=auth-mode]').click();
@@ -141,9 +157,9 @@ await local.locator('[name=password]').fill('password123');
 await local.locator('#account-form button[type=submit]').click();
 await local.locator('.header .signed-in').waitFor();
 assert.match(await local.locator('[data-like=r2]').first().getAttribute('class'),/liked/);
-assert.match(await local.locator('.report-card').filter({hasText:'파일 사진 신고'}).locator('img').first().getAttribute('src'),/^data:image\/png/);
+assert.equal(await local.locator('.report-card').filter({hasText:'파일 사진 신고'}).locator('img').first().getAttribute('src'),'https://www.koosik.kr/public/mock.png');
 const keys=await local.evaluate(async()=>{const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('chungju-eatda-internal-files-v1');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});return await new Promise((resolve,reject)=>{const r=db.transaction('files').objectStore('files').getAllKeys();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});});
-assert.ok(keys.includes('file:data/accounts.json'));assert.ok(keys.some(key=>String(key).startsWith('file:data/users/')));assert.ok(keys.some(key=>String(key).startsWith('file:img/')));
+assert.ok(keys.includes('file:data/accounts.json'));assert.ok(keys.some(key=>String(key).startsWith('file:data/users/')));assert.ok(keys.includes('dir:img'));
 await browser.close();
 await new Promise(resolve=>server.close(resolve));
-console.log('PASS: no picker, real browser-private JSON and image, retries, account isolation, reload, file:// fallback');
+console.log('PASS: no picker, local account JSON, uploaded image URLs, retries, account isolation, reload and file:// fallback');
