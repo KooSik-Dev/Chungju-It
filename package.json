@@ -7,9 +7,11 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js",
+    "test:browser": "node tests/browser-regression.mjs"
   },
   "devDependencies": {
+    "playwright-core": "^1.64.1",
     "vite": "^6.1.0"
   },
   "dependencies": {

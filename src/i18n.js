@@ -1,5 +1,7 @@
 // 문구만 번역하며 신고 ID, 필터 값, 입력한 내용은 변경하지 않습니다.
 const translations = {
+ '필터를 초기화하고 선택한 위치를 보여드려요.':'Filters cleared to show the selected location.',
+ '사진을 읽지 못했어요. 다시 선택해 주세요.':'Could not read the photo. Please choose it again.',
  '내 위치로 이동':'Go to my location','내 위치':'My location',
  '이 브라우저에서는 위치 확인을 지원하지 않아요.':'This browser does not support location.',
  '기기 위치를 확인하고 있어요.':'Finding your location.',
