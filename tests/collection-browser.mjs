@@ -30,9 +30,9 @@ async function prepare(){
   if(method==='DELETE'){if(mode==='delete-conflict'&&item){mode='';item.revision++;return send({error:'conflict'},409);}if(!item)return send({error:'not found'},404);if(String(item.revision)!==url.searchParams.get('revision'))return send({error:'conflict'},409);list.splice(list.indexOf(item),1);return send({ok:true});}
   return send({error:'unsupported'},404);
  });
- await page.goto(pathToFileURL(resolve('dist/index.html')).href);await page.locator('#remote-status').filter({hasText:'연결되었습니다'}).waitFor();return {ctx,page,errors};
+ await page.goto(pathToFileURL(resolve('dist/index.html')).href);await page.locator('.list-panel[data-remote-ready="true"]').waitFor();return {ctx,page,errors};
 }
-const a=await prepare();const p=a.page;
+const a=await prepare();const p=a.page;assert.equal(await p.locator('.remote-bar, #remote-status').count(),0);assert.equal(await p.getByText('목록이 연결되었습니다.').count(),0);
 assert.equal(db.reports.length,0);assert.equal(await p.locator('.report-card').count(),0);
 await p.locator('.header [data-action=report]').click();await p.locator('[name=category]').selectOption('청결');await p.locator('[name=title]').fill('공원 정리');await p.locator('[name=detail]').fill('공원 입구를 확인해주세요');await p.locator('[name=location]').fill('충주시 호암동');
 await p.locator('[name=photo]').setInputFiles({name:'image.png',mimeType:'image/png',buffer:image});await p.locator('#photo-preview:not(.hidden)').waitFor();await p.locator('#report-form [type=submit]').click();await p.locator('.modal').waitFor({state:'detached'});await p.locator('[data-detail="item-1"]').first().waitFor();
@@ -55,7 +55,7 @@ await q.locator('.header [data-action=report]').click();await q.locator('[name=c
 await q.locator('[data-detail="item-1"]').first().click();mode='delete-conflict';await q.locator('[data-delete-report="item-1"]').click();await q.locator('#toast').filter({hasText:'최신 신고'}).waitFor();assert.ok(db.reports.some(x=>x.id==='item-1'));await q.locator('[data-delete-report="item-1"]').click();await q.locator('.modal').waitFor({state:'detached'});assert.equal(db.reports.some(x=>x.id==='item-1'),false);assert.ok(requests.some(x=>x.method==='DELETE'&&x.url.includes('revision=4')));
 // Pagination, independent browser reread, load error and recovery.
 for(let i=0;i<52;i++)db.reports.push({id:'bulk-'+i,revision:1,created_at:new Date().toISOString(),updated_at:new Date().toISOString(),data:{category:'청결',title:'목록 '+i,detail:'내용',location:'충주시',lat:36.99,lng:127.92,status:'공감모집',clientId:'someone',image:'river.jpg'}});
-mode='load401';await q.locator('[data-action=reload-remote]').click();await q.locator('#remote-status').filter({hasText:'401'}).waitFor();await q.locator('[data-action=reload-remote]').click();await q.locator('#remote-status').filter({hasText:'연결되었습니다'}).waitFor();assert.ok(requests.some(x=>x.url.includes('offset=50')));assert.ok(await q.locator('[data-detail="bulk-51"]').count()>0);
+mode='load401';await q.locator('footer [data-action=reload-remote]').click();await q.locator('#remote-error').filter({hasText:'401'}).waitFor();await q.locator('#remote-error [data-action=reload-remote]').click();await q.locator('.list-panel[data-remote-ready="true"]').waitFor();assert.equal(await q.locator('#remote-error').isHidden(),true);assert.ok(requests.some(x=>x.url.includes('offset=50')));assert.ok(await q.locator('[data-detail="bulk-51"]').count()>0);
 await q.setViewportSize({width:360,height:780});await q.locator('#search').fill('목록 51');assert.ok(await q.locator('[data-detail="bulk-51"]').count()>0);assert.equal(await q.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);await q.locator('#search').fill('');await q.locator('#language').selectOption('en');await q.locator('.header').getByText('Report', {exact:false}).first().waitFor();
 assert.ok(requests.every(x=>!x.body||!x.body.toLowerCase().includes('password')));assert.deepEqual(a.errors,[]);assert.deepEqual(b.errors,[]);
 await browser.close();console.log('PASS: empty, paging, shared CRUD, photo, revision conflict, error input preservation and lost response');
