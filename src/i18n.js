@@ -1,5 +1,9 @@
 // 문구만 번역하며 신고 ID, 필터 값, 입력한 내용은 변경하지 않습니다.
 const translations = {
+ '표시된 신고 모두 보기':'Fit visible reports',
+ '지도에 표시할 신고가 없어요.':'There are no reports to show on the map.',
+ '함께 살펴볼 이야기':'More stories to explore',
+ '이 기기의 예시·테스트':'Examples and tests on this device',
  '검색어 지우기':'Clear search',
  '민감한 개인정보는 입력하지 마세요.':'Please do not enter sensitive personal information.',
  '임시 글을 불러왔어요':'Your draft is back',
