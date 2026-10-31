@@ -4,7 +4,7 @@
 
 ## 바로 실행하기
 
-빌드된 `dist/index.html` 파일 하나를 브라우저에서 여세요. 사진·스타일·스크립트가 모두 파일 안에 포함되어 있습니다. 지도에는 인터넷이 필요합니다. 브라우저 정책에 따라 `file://`에서 지도 또는 localStorage가 제한되면 폴더에서 `python3 -m http.server 8000`을 실행하고 `http://localhost:8000/`으로 접속하거나 HTTPS 정적 호스팅을 사용하세요.
+저장소의 `chungju-eatda.html` 파일을 다운로드해 브라우저에서 여세요. 직접 빌드한 경우에는 `dist/index.html` 파일을 열면 됩니다. 사진·스타일·스크립트가 모두 파일 안에 포함되어 있습니다. 지도에는 인터넷이 필요합니다. 브라우저 정책에 따라 `file://`에서 지도 또는 localStorage가 제한되면 폴더에서 `python3 -m http.server 8000`을 실행하고 `http://localhost:8000/`으로 접속하거나 HTTPS 정적 호스팅을 사용하세요.
 
 ## 개발과 배포
 

@@ -3,5 +3,3 @@ dist/
 *.zip
 .DS_Store
 
-# 배포용 단일 HTML은 npm run build로 생성
-/chungju-eatda.html
