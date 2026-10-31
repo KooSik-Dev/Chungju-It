@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, writeFile, rm, stat, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { register, authenticate, writeSnapshot, readSnapshot } from '../src/local-files.js';
+import { register, authenticate, writeSnapshot, readSnapshot, initializeStore } from '../src/local-files.js';
 
 // Adapter exercises the exact File System Access calls against actual temporary files.
 class Dir {
@@ -44,4 +44,12 @@ test('accounts, photos and changes persist as files with no plaintext password',
 test('rejects unsafe account names and weak passwords',async t=>{
  const path=await mkdtemp(join(tmpdir(),'chungju-files-'));t.after(()=>rm(path,{recursive:true,force:true}));const root=new Dir(path);
  for(const [name,pass] of [['../bad','password123'],['ok','123'],['a','password123']]) await assert.rejects(register(root,name,pass,snapshot()),/이름은/);
+});
+
+test('initialization creates empty files and never overwrites malformed accounts',async t=>{
+ const path=await mkdtemp(join(tmpdir(),'chungju-init-'));t.after(()=>rm(path,{recursive:true,force:true}));const root=new Dir(path);
+ await initializeStore(root);assert.deepEqual(JSON.parse(await readFile(join(path,'data','accounts.json'),'utf8')).accounts,[]);
+ await writeFile(join(path,'data','accounts.json'),'{broken');
+ await assert.rejects(initializeStore(root),/손상/);
+ assert.equal(await readFile(join(path,'data','accounts.json'),'utf8'),'{broken');
 });

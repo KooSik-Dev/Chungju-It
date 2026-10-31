@@ -40,6 +40,15 @@ async function readAccounts(root) {
   if(!value || value.version!==1 || !Array.isArray(value.accounts) || value.accounts.length>1000 || value.accounts.some(a=>!a || !safeId(a.id) || typeof a.name!=='string' || !userPattern.test(a.name) || !/^[a-f0-9]{32}$/.test(a.salt) || !/^[a-f0-9]{64}$/.test(a.hash) || a.iterations!==iterations)) throw Error('계정 파일이 올바르지 않습니다.');
   return value.accounts;
 }
+// Create the initial directory structure and account file without replacing existing data.
+export async function initializeStore(root) {
+ const data=await folder(root,['data'],true);
+ await folder(root,['data','users'],true);
+ await folder(root,['img'],true);
+ const text=await readText(data,'accounts.json',true);
+ if(text===null) await write(data,'accounts.json',JSON.stringify({version:1,accounts:[]},null,2));
+ else await readAccounts(root); // Never replace a damaged account file silently.
+}
 export async function register(root, rawName, password, initialSnapshot) {
   const name=normalizeName(rawName);
   if(!validCredentials(name,password)) throw Error('이름은 2~20자, 비밀번호는 8~128자로 입력해 주세요.');

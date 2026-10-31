@@ -1,42 +1,46 @@
-// Integration test: mock browser directory permission, inspect saved files and UI.
+// Integration test: actual browser-private files plus file:// IndexedDB fallback.
 import { chromium } from 'playwright-core';
 import assert from 'node:assert/strict';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { createServer } from 'node:http';
+import { readFile } from 'node:fs/promises';
 
+const html=await readFile(resolve('dist/index.html'));
+const server=createServer((request,response)=>{response.writeHead(200,{'content-type':'text/html; charset=utf-8'});response.end(html);});
+await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+const appUrl=`http://127.0.0.1:${server.address().port}/`;
 const browser = await chromium.launch({args:['--no-sandbox','--disable-dev-shm-usage','--enable-webgl','--use-angle=swiftshader','--enable-unsafe-swiftshader',...(process.env.CHROMIUM_SINGLE_PROCESS==='1'?['--single-process','--no-zygote']:[])],...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{})});
 const page=await browser.newPage({viewport:{width:1200,height:900},reducedMotion:'reduce'});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
 await page.addInitScript(() => {
-  const key='test-fake-folder';
-  const get=()=>JSON.parse(localStorage.getItem(key)||'{"dirs":[""],"files":{}}');
-  const set=value=>localStorage.setItem(key,JSON.stringify(value));
-  const missing=()=>new DOMException('not found','NotFoundError');
-  const dir=path=>({name:path.split('/').pop()||'내 저장 폴더',
-    async getDirectoryHandle(name,{create=false}={}) {const current=get(),next=[path,name].filter(Boolean).join('/');if(!current.dirs.includes(next)){if(!create)throw missing();current.dirs.push(next);set(current);}return dir(next);},
-    async getFileHandle(name,{create=false}={}){const target=[path,name].filter(Boolean).join('/');if(!create&&!(target in get().files))throw missing();return {
-      async getFile(){const value=get().files[target];if(!value)throw missing();const bytes=Uint8Array.from(atob(value),c=>c.charCodeAt(0));return new File([bytes],name);},
-      async createWritable(){let value;return {async write(data){value=data instanceof Blob?new Uint8Array(await data.arrayBuffer()):new TextEncoder().encode(data);},async close(){if(window.failWrites)throw new Error('write denied');let text='';for(let i=0;i<value.length;i+=32768)text+=String.fromCharCode(...value.subarray(i,i+32768));const current=get();current.files[target]=btoa(text);set(current);},async abort(){}};}
-    };}
-  });
-  window.showDirectoryPicker=async()=>dir('');
+  const original=FileSystemFileHandle.prototype.createWritable;
+  FileSystemFileHandle.prototype.createWritable=function(...args){
+    if(window.failWrites) throw new Error('write denied');
+    return original.apply(this,args);
+  };
 });
 await page.route('https://tiles.openfreemap.org/styles/positron',route=>route.fulfill({status:200,headers:{'access-control-allow-origin':'*'},contentType:'application/json',body:JSON.stringify({version:8,sources:{},layers:[]})}));
-await page.goto(pathToFileURL(resolve('dist/index.html')).href);
+await page.goto(appUrl);
 await page.locator('.header [data-action=login]').click();
 await page.locator('[data-action=auth-mode]').click();
-await page.locator('[data-action=choose-folder]').click();
 await page.locator('[name=username]').fill('충주시민');
 await page.locator('[name=password]').fill('password123');
 await page.locator('[name=confirm]').fill('password123');
 await page.locator('#account-form button[type=submit]').click();
 await page.locator('.header .signed-in').waitFor();
-let stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('test-fake-folder')));
-const accounts=JSON.parse(Buffer.from(stored.files['data/accounts.json'],'base64').toString());
+const readBrowserFile = path => page.evaluate(async path => {
+ const parts=path.split('/'),name=parts.pop();let current=await navigator.storage.getDirectory();
+ for(const dir of parts)current=await current.getDirectoryHandle(dir);
+ return await (await (await current.getFileHandle(name)).getFile()).text();
+}, path);
+assert.equal(await page.locator('[data-action=choose-folder]').count(),0);
+const accountText=await readBrowserFile('data/accounts.json');
+const accounts=JSON.parse(accountText);
 assert.equal(accounts.accounts.length,1);assert.equal(accounts.accounts[0].name,'충주시민');
-assert.ok(!JSON.stringify(accounts).includes('password123'));
+assert.ok(!accountText.includes('password123'));
 const id=accounts.accounts[0].id;
-assert.ok(stored.files[`data/users/${id}.json`]);
+assert.ok(await readBrowserFile(`data/users/${id}.json`));
 
 // Activity, report and photo are written separately and survive logout/login and reload.
 await page.locator('[data-like=r2]').first().click();
@@ -49,12 +53,12 @@ await page.locator('[name=photo]').setInputFiles({name:'photo.png',mimeType:'ima
 await page.locator('#photo-preview:not(.hidden)').waitFor();
 await page.locator('#report-form button[type=submit]').click();
 await page.locator('.modal').waitFor({state:'detached'});
-await page.locator('.folder-save-bar [data-folder-save-status]').filter({hasText:'폴더에 저장됨'}).waitFor();
-stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('test-fake-folder')));
-const record=JSON.parse(Buffer.from(stored.files[`data/users/${id}.json`],'base64').toString());
+await page.locator('.folder-save-bar [data-folder-save-status]').filter({hasText:'저장됨'}).waitFor();
+const recordText=await readBrowserFile(`data/users/${id}.json`);
+const record=JSON.parse(recordText);
 const report=record.data.reports.find(r=>r.title==='테스트 사진 신고');
-assert.ok(report);assert.match(report.image,/^img\/[a-f0-9]{64}\.png$/);assert.ok(stored.files[report.image]);assert.ok(record.data.liked.includes('r2'));
-assert.ok(!Buffer.from(stored.files[`data/users/${id}.json`],'base64').toString().includes('data:image'));
+assert.ok(report);assert.match(report.image,/^img\/[a-f0-9]{64}\.png$/);assert.ok((await readBrowserFile(report.image)).length>0);assert.ok(record.data.liked.includes('r2'));
+assert.ok(!recordText.includes('data:image'));
 
 // Folder write failure is visible and logout is blocked until retry succeeds.
 await page.evaluate(()=>window.failWrites=true);
@@ -65,16 +69,13 @@ await page.locator('[data-action=logout]').click();
 assert.equal(await page.locator('.header .signed-in').count(),1);
 await page.evaluate(()=>window.failWrites=false);
 await page.locator('[data-action=retry-folder-save]').click();
-await page.locator('.profile-explain [data-folder-save-status]').filter({hasText:'폴더에 저장됨'}).waitFor();
+await page.locator('.profile-explain [data-folder-save-status]').filter({hasText:'저장됨'}).waitFor();
 await page.locator('[data-action=logout]').click();
 await page.locator('.header .signed-in').waitFor({state:'detached'});
 await page.reload();
 await page.locator('.header [data-action=login]').click();
 await page.locator('[name=username]').fill('충주시민');
 await page.locator('[name=password]').fill('wrongpassword');
-await page.locator('#account-form button[type=submit]').click();
-assert.match(await page.locator('#account-error').innerText(),/폴더/);
-await page.locator('[data-action=choose-folder]').click();
 await page.locator('#account-form button[type=submit]').click();
 await page.locator('#account-error').filter({hasText:'올바르지'}).waitFor();
 assert.match(await page.locator('#account-error').innerText(),/올바르지/);
@@ -104,11 +105,45 @@ await page.locator('[data-action=logout]').click();
 for(const width of [320,375,768,1200]) {
   await page.setViewportSize({width,height:900});
   await page.locator('.header [data-action=login]').click({force:true});
-  await page.waitForTimeout(100);
-  const overflow=await page.evaluate(()=>({page:document.documentElement.scrollWidth-innerWidth,modal:document.querySelector('.modal').scrollWidth-document.querySelector('.modal').clientWidth}));
+  await page.waitForTimeout(250);
+  const overflow=await page.evaluate(()=>({page:document.documentElement.scrollWidth-innerWidth,modal:document.querySelector('.modal').scrollWidth-document.querySelector('.modal').clientWidth,offenders:[...document.querySelectorAll('*')].filter(e=>e.getBoundingClientRect().right>innerWidth+1).slice(0,8).map(e=>[e.tagName,e.className,e.getBoundingClientRect().right])}));
   assert.ok(overflow.page<=1 && overflow.modal<=1,`login overflow ${width}: ${JSON.stringify(overflow)}`);
   await page.locator('.modal-head button').click();
 }
 assert.deepEqual(errors,[]);
+// file:// does not expose OPFS in Chromium; the no-picker IndexedDB fallback must persist too.
+const local=await browser.newPage({viewport:{width:1024,height:768}});
+await local.route('https://tiles.openfreemap.org/styles/positron',route=>route.abort());
+await local.goto(pathToFileURL(resolve('dist/index.html')).href);
+await local.locator('.header [data-action=login]').click();
+await local.locator('[data-action=auth-mode]').click();
+assert.equal(await local.locator('[data-action=choose-folder]').count(),0);
+await local.locator('[name=username]').fill('파일사용자');
+await local.locator('[name=password]').fill('password123');
+await local.locator('[name=confirm]').fill('password123');
+await local.locator('#account-form button[type=submit]').click();
+await local.locator('.header .signed-in').waitFor();
+await local.locator('[data-like=r2]').first().click();
+await local.locator('.header [data-action=report]').click();
+await local.locator('[name=category]').selectOption('청결');
+await local.locator('[name=title]').fill('파일 사진 신고');
+await local.locator('[name=detail]').fill('사진 저장');
+await local.locator('[name=location]').fill('충주시');
+await local.locator('[name=photo]').setInputFiles({name:'photo.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a8XcAAAAASUVORK5CYII=','base64')});
+await local.locator('#photo-preview:not(.hidden)').waitFor();
+await local.locator('#report-form button[type=submit]').click();
+await local.locator('.modal').waitFor({state:'detached'});
+await local.locator('.folder-save-bar [data-folder-save-status]').filter({hasText:'저장됨'}).waitFor();
+await local.reload();
+await local.locator('.header [data-action=login]').click();
+await local.locator('[name=username]').fill('파일사용자');
+await local.locator('[name=password]').fill('password123');
+await local.locator('#account-form button[type=submit]').click();
+await local.locator('.header .signed-in').waitFor();
+assert.match(await local.locator('[data-like=r2]').first().getAttribute('class'),/liked/);
+assert.match(await local.locator('.report-card').filter({hasText:'파일 사진 신고'}).locator('img').first().getAttribute('src'),/^data:image\/png/);
+const keys=await local.evaluate(async()=>{const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('chungju-eatda-internal-files-v1');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});return await new Promise((resolve,reject)=>{const r=db.transaction('files').objectStore('files').getAllKeys();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});});
+assert.ok(keys.includes('file:data/accounts.json'));assert.ok(keys.some(key=>String(key).startsWith('file:data/users/')));assert.ok(keys.some(key=>String(key).startsWith('file:img/')));
 await browser.close();
-console.log('PASS: signup, credentials, separate image, JSON, retry, logout, reload and login');
+await new Promise(resolve=>server.close(resolve));
+console.log('PASS: no picker, real browser-private JSON and image, retries, account isolation, reload, file:// fallback');

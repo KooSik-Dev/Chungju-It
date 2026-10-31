@@ -1,5 +1,11 @@
 // 문구만 번역하며 신고 ID, 필터 값, 입력한 내용은 변경하지 않습니다.
 const translations = {
+ '이름과 비밀번호로 내 계정을 이용해요.':'Use your account with a name and password.',
+ '비밀번호는 찾을 수 없으니 꼭 기억해 주세요. 계정과 기록은 이 브라우저에 보관됩니다.':'Keep your password safe; it cannot be recovered. Your account and records stay in this browser.',
+ '이 브라우저의 계정':'Account in this browser',
+ '계정과 활동, 사진은 이 브라우저의 저장 공간에 보관됩니다.':'Accounts, activity and photos are stored in this browser.',
+ '저장 중…':'Saving…','저장됨':'Saved','저장 실패 · 다시 저장 필요':'Save failed · retry required',
+
  '충주잇다 기록으로 저장되며 시청에 접수되지 않습니다.':'Saved as a Chungju Itda record; not submitted to City Hall.',
  '신고 저장하기':'Save report',
  '폴더 선택':'Choose folder','폴더 변경':'Change folder','저장 폴더':'Storage folder',
