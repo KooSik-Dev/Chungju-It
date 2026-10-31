@@ -1,5 +1,41 @@
 // 문구만 번역하며 신고 ID, 필터 값, 입력한 내용은 변경하지 않습니다.
 const translations = {
+ '공감이 모이는 이야기':'Stories gathering support',
+ '우리 동네에서 관심을 받고 있는 신고를 만나보세요.':'Discover the issues your community cares about.',
+ '회차 보기':'View rounds','안내':'Note','예시 안내':'Example data',
+ '아래 순위는 이 기기의 예시·테스트 데이터로 계산돼요. 시청에 자동 전달되지 않습니다.':'Rankings use example and test data on this device. Nothing is automatically sent to City Hall.',
+ '지금 가장 공감하는 신고':'Most supported right now',
+ '공감 모집 중인 신고의 누적 공감 순위입니다.':'Open reports ranked by their total accumulated support.',
+ '공감 모집 중인 신고가 없습니다.':'There are no reports open for support.',
+ '한눈에 보는 공감 순위':'Community support ranking',
+ '마음이 닿은 신고에 공감을 더해 주세요.':'Show support for the issues that matter to you.',
+ '전체 신고':'All reports','공감':'Support',
+ '신고의 변화를 살펴봐요':'Follow report progress',
+ '목소리가 모인 이후의 단계를 한눈에 확인하세요.':'See the example stages at a glance.',
+ '이 기기의 예시와 테스트 신고':'Examples and test reports on this device',
+ '함께 관심을 모으는 이야기':'Stories gathering support','처리 완료':'Resolved',
+ '예시 상태 기준':'Based on example statuses','단계별 신고 보기':'Browse by stage',
+ '단계를 선택하면 해당 신고만 모아볼 수 있어요.':'Select a stage to see matching reports.',
+ '신고 보러가기 →':'View reports →','진행 상황':'Progress',
+ '표시된 단계는 테스트 신고의 상태이며 실제 처리 이력이 아닙니다.':'This is the test report status, not an actual processing history.',
+ '표시된 단계는 예시 신고의 상태이며 실제 처리 이력이 아닙니다.':'This is an example status, not an actual processing history.',
+ '현재 단계':'Current stage','단계 안내':'Stage',
+ '내 프로필':'My profile','게스트로 로그인':'Guest sign in','표시명 변경':'Change display name',
+ '어떻게 불러드릴까요?':'What should we call you?','반가워요, 충주 이웃님!':'Welcome, Chungju neighbor!',
+ '이 기기에서 사용할 이름을 정해 주세요.':'Choose a name to use on this device.',
+ '실제 계정 인증이 아닌 이 브라우저의 게스트 세션입니다. 비밀번호나 개인정보를 입력하지 마세요.':'This is a local guest session, not account authentication. Do not enter passwords or personal information.',
+ '이 브라우저에서 로그인 유지':'Keep me signed in on this browser',
+ '체크하지 않으면 브라우저 탭을 닫을 때 로그아웃됩니다.':'If unchecked, the session ends when this browser tab is closed.',
+ '변경사항 저장':'Save changes','게스트로 시작하기':'Continue as a guest',
+ '로그아웃해도 이 기기의 신고와 공감 기록은 삭제되지 않습니다.':'Signing out does not delete reports or support on this device.',
+ '이 브라우저의 게스트':'Guest on this browser',
+ '실제 계정이 아니며 다른 기기와 연동되지 않습니다.':'This is not a real account and does not sync across devices.',
+ '나의 활동은 이 기기에 보관돼요':'Your activity stays on this device',
+ '표시명과 관계없이 같은 브라우저의 신고와 공감 기록을 함께 사용합니다.':'Reports and support are shared on this browser regardless of display name.',
+ '로그아웃':'Sign out','표시명을 변경했어요.':'Display name updated.',
+ '게스트 세션에서 로그아웃했어요. 데이터는 이 기기에 남아 있어요.':'Signed out of the guest session. Data remains on this device.',
+ '게스트로 시작했지만 브라우저 설정 때문에 로그인 상태가 유지되지 않을 수 있어요.':'Guest session started, but browser settings may prevent it from persisting.',
+
  '충주시민이 함께 만드는 생활불편 개선 플랫폼':'A better Chungju, built together by its residents',
  '충주잇다':'Chungju Itda','충주잇다 홈':'Chungju Itda home','시민 생활불편 공감신고':'Community issue reports',
  '민원지도':'Issue map','공감순위':'Top supported','처리현황':'Status','자료조사':'Resources','이용안내':'How it works',
@@ -128,6 +164,8 @@ export function translateText(value, language = 'ko') {
   else if ((match=text.match(/^(\d+)일 (\d+)시간 (\d+)분 (\d+)초$/))) result=`${match[1]}d ${match[2]}h ${match[3]}m ${match[4]}s`;
   else if ((match=text.match(/^(\d+)일$/))) result=`${match[1]} days`;
   else if ((match=text.match(/^총 (\d+)건$/))) result=`${match[1]} reports`;
+  else if ((match=text.match(/^(\d+)건 참여 중$/))) result=`${match[1]} open reports`;
+  else if ((match=text.match(/^(.*) 자세히 보기$/))) result=`View ${translateText(match[1],language)} details`;
   else if ((match=text.match(/^(\d+)건 표시$/))) result=`${match[1]} shown`;
   else if ((match=text.match(/^공감 ([\d,]+)$/))) result=`Support ${match[1]}`;
   else if ((match=text.match(/^([\d,]+) 공감$/))) result=`${match[1]} support`;
