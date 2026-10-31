@@ -5,6 +5,15 @@ import mapWorker from 'maplibre-gl/dist/maplibre-gl-worker.mjs?raw';
 let workerUrl;
 function prepareMapWorker(){ if(!workerUrl){ workerUrl=URL.createObjectURL(new Blob([mapWorker],{type:'text/javascript'})); maplibregl.setWorkerUrl(workerUrl); } }
 import { categories, statuses, initialReports, imageFor } from './data.js';
+import stationPhoto from '../public/images/station.jpg?inline';
+import streetlightPhoto from '../public/images/streetlight.jpg?inline';
+import trafficPhoto from '../public/images/traffic.jpg?inline';
+import busPhoto from '../public/images/bus.jpg?inline';
+import schoolPhoto from '../public/images/school.jpg?inline';
+import riverPhoto from '../public/images/river.jpg?inline';
+import parkingPhoto from '../public/images/parking.jpg?inline';
+import sidewalkPhoto from '../public/images/sidewalk.jpg?inline';
+const bundledImages = {'station.jpg':stationPhoto,'streetlight.jpg':streetlightPhoto,'traffic.jpg':trafficPhoto,'bus.jpg':busPhoto,'school.jpg':schoolPhoto,'river.jpg':riverPhoto,'parking.jpg':parkingPhoto,'sidewalk.jpg':sidewalkPhoto};
 
 const $ = (s, root=document) => root.querySelector(s);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -27,7 +36,7 @@ let state={page:'map',search:'',category:'전체',status:'전체 상태',sort:'l
 let map=null, markers=[], mapReady=false, mapError='', mapTimer=null;
 const mapStyle='https://tiles.openfreemap.org/styles/positron';
 const center={lat:36.991,lng:127.926};
-const imageUrl = r => r.image?.startsWith('data:image/') ? r.image : `./images/${encodeURIComponent(r.image || imageFor[r.category] || 'station.jpg')}`;
+const imageUrl = r => r.image?.startsWith('data:image/') ? r.image : (bundledImages[r.image || imageFor[r.category]] || stationPhoto);
 const rankMap=()=>Object.fromEntries(data.reports.filter(r=>r.status==='공감모집').sort((a,b)=>b.likes-a.likes).slice(0,3).map((r,i)=>[r.id,i+1]));
 function filtered(){let q=state.search.trim().toLowerCase(); return data.reports.filter(r=>(!q || `${r.title} ${r.location} ${r.category} ${r.detail||''}`.toLowerCase().includes(q))&&(state.category==='전체'||r.category===state.category)&&(state.status==='전체 상태'||r.status===state.status)).sort((a,b)=>state.sort==='likes'?b.likes-a.likes:(b.createdAt||0)-(a.createdAt||0));}
 function card(r, rank, index) { return `<article class="report-card ${state.selected===r.id?'selected':''}" tabindex="0" role="button" data-card="${esc(r.id)}" aria-label="${esc(r.title)} 위치 보기">
@@ -81,5 +90,5 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('.modal'))closeMo
 document.addEventListener('input',e=>{if(e.target.id==='search'){state.search=e.target.value;updateList();}if(e.target.name==='photo'){const file=e.target.files[0], preview=$('#photo-preview');if(!file){preview.classList.add('hidden');return;}if(!file.type.startsWith('image/')||file.size>1024*1024){e.target.value='';preview.classList.add('hidden');toast('1MB 이하의 이미지 파일을 선택해 주세요.');return;}const reader=new FileReader();reader.onload=()=>{preview.src=reader.result;preview.classList.remove('hidden');};reader.readAsDataURL(file);}});
 document.addEventListener('change',e=>{if(e.target.id==='status-filter'){state.status=e.target.value;updateList();}if(e.target.id==='sort'){state.sort=e.target.value;updateList();}if(e.target.id==='language'&&e.target.value==='en'){e.target.value='ko';toast('English 서비스는 준비 중입니다. 현재 한국어로 이용해 주세요.');}});
 document.addEventListener('submit',async e=>{e.preventDefault();if(e.target.id==='login-form'){let guest=new FormData(e.target).get('guest').trim();if(!guest){toast('표시명을 입력해 주세요.');return;}let old=data.guest;data.guest=guest;if(!save()){data.guest=old;return;}closeModal();toast(`${guest}님, 반가워요!`);}if(e.target.id==='report-form'){const form=e.target, fd=new FormData(form);const title=fd.get('title').trim(),detail=fd.get('detail').trim(),location=fd.get('location').trim(),category=fd.get('category');if(!title||!detail||!location||!category){toast('필수 항목을 모두 입력해 주세요.');return;}let photo=$('#photo-preview');if(fd.get('photo')?.size && (!photo.src.startsWith('data:image/')||photo.classList.contains('hidden'))){toast('사진 미리보기가 준비될 때까지 기다려 주세요.');return;}const button=form.querySelector('[type=submit]');button.disabled=true;button.textContent='저장 중...';let coords=mapReady?{lat:map.getCenter().lat,lng:map.getCenter().lng}:{...center};const r={id:`test-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,category,title,detail,location,status:'공감모집',likes:0,image:photo.classList.contains('hidden')?imageFor[category]:photo.src,lat:coords.lat,lng:coords.lng,test:true,createdAt:Date.now()};data.reports.unshift(r);if(!save()){data.reports.shift();button.disabled=false;button.textContent='테스트 신고 저장하기';return;}closeModal();state.page='map';state.category='전체';state.status='전체 상태';state.search='';state.sort='recent';state.mobile='list';render();toast('테스트 신고가 저장되었습니다. 지도에는 신고 당시의 지도 중심이 표시됩니다.');}});
-document.addEventListener('error',e=>{if(e.target.matches?.('img[data-fallback]')){e.target.removeAttribute('data-fallback');e.target.src='./images/station.jpg';}},true);
+document.addEventListener('error',e=>{if(e.target.matches?.('img[data-fallback]')){e.target.removeAttribute('data-fallback');e.target.src=stationPhoto;}},true);
 render();
