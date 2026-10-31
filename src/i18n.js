@@ -1,5 +1,18 @@
 // 문구만 번역하며 신고 ID, 필터 값, 입력한 내용은 변경하지 않습니다.
 const translations = {
+ '우리 동네 공감 플랫폼':'A community built together',
+ '작은 불편이 모여':'Small voices,','더 좋은 동네로.':'a better neighborhood.',
+ '이웃의 이야기를 살펴보고, 함께 공감해요.':'Explore local stories and show your support.',
+ '공감 순위 보기':'Explore the rankings','예시·테스트 데이터':'Example and test data',
+ '함께 살펴볼 이야기':'Stories to explore','동네 이야기 둘러보기':'Explore local stories',
+ '목록에서 찾고, 지도에서 위치를 확인해요.':'Explore the list and find each story on the map.',
+ '이 브라우저의 예시와 테스트 신고':'Examples and test reports in this browser',
+ '이웃들의 이야기':'Stories from our neighborhood','검색하고 공감해요':'Search and show your support',
+ '모바일 메뉴':'Mobile navigation','동네':'Explore','순위':'Ranking','현황':'Status','신고':'Report','더보기':'More',
+ '더 둘러보기':'Explore more','충주잇다를 더 편하게 이용해보세요.':'Find more ways to use Chungju Itda.',
+ '지역 정보와 공식 창구':'Local information and official channels','처음이라면 여기부터':'Start here if you are new',
+ '이 브라우저의 게스트 활동':'Your guest activity on this browser',
+
  'AI 예시 이미지':'AI-generated example image',
  '우리 동네 이야기 지도':'Neighborhood story map',
  '지금 주목받는 이야기':'Stories people care about',
