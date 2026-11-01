@@ -10,6 +10,7 @@ const headers={'access-control-allow-origin':'*','access-control-allow-headers':
 async function setup(){
  const context=await browser.newContext({viewport:{width:1100,height:900},reducedMotion:'reduce'}),page=await context.newPage(),errors=[];await context.addInitScript(()=>{try{localStorage.setItem('chungju-entry-seen','1');}catch{}});page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
  await page.route('https://tiles.openfreemap.org/**',r=>r.abort());
+ await page.route('https://api.mymemory.translated.net/**',r=>r.fulfill({status:200,headers:{'access-control-allow-origin':'*'},contentType:'application/json',body:JSON.stringify({responseStatus:200,responseData:{translatedText:'translated'}})}));
  await page.route('https://www.koosik.kr/**',async route=>{
   const req=route.request(),url=new URL(req.url()),method=req.method();if(method==='OPTIONS')return route.fulfill({status:204,headers});
   const send=(o,status=200)=>route.fulfill({status,headers,contentType:'application/json',body:JSON.stringify(o)});

@@ -354,7 +354,7 @@ export function translateElement(root, language) {
   if(node.nodeType===Node.TEXT_NODE){
    const parent=node.parentElement;
    if(!parent||parent.closest('[data-no-translate], textarea, script, style, .maplibregl-ctrl-attrib'))return;
-   const next=translateText(node.nodeValue,language);if(next!==node.nodeValue)node.nodeValue=next;
+   const next=translateText(node.nodeValue,language);if(next!==node.nodeValue){if(parent.tagName==='OPTION'&&!parent.hasAttribute('value'))parent.setAttribute('value',parent.textContent);node.nodeValue=next;}
   } else if(node.nodeType===Node.ELEMENT_NODE){
    if(node.closest('[data-no-translate], .maplibregl-ctrl-attrib'))return;
    for(const attr of ['placeholder','aria-label','alt','title']){const value=node.getAttribute(attr);if(value){const next=translateText(value,language);if(next!==value)node.setAttribute(attr,next);}}

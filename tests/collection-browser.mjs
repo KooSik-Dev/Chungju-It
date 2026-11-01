@@ -10,6 +10,7 @@ const image=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR
 async function prepare(){
  const ctx=await browser.newContext({viewport:{width:1100,height:900},reducedMotion:'reduce'});const page=await ctx.newPage();const errors=[];await ctx.addInitScript(()=>{try{localStorage.setItem('chungju-entry-seen','1');}catch{}});page.on('pageerror',e=>errors.push(e.message));page.on('dialog',dialog=>dialog.accept());
  await page.route('https://tiles.openfreemap.org/**',r=>r.abort());
+ await page.route('https://api.mymemory.translated.net/**',r=>r.fulfill({status:200,headers:{'access-control-allow-origin':'*'},contentType:'application/json',body:JSON.stringify({responseStatus:200,responseData:{translatedText:'translated'}})}));
  await page.route('https://www.koosik.kr/**',async route=>{
   const req=route.request(),url=new URL(req.url()),method=req.method();if(method==='OPTIONS')return route.fulfill({status:204,headers});
   if(url.pathname==='/public/test.png')return route.fulfill({status:200,headers,contentType:'image/png',body:image});
