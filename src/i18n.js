@@ -1,6 +1,7 @@
 import { offlineUiTranslation } from './languages.js';
 // 문구만 번역하며 신고 ID, 필터 값, 입력한 내용은 변경하지 않습니다.
 const translations = {
+ '처리 완료':'Completed','처리 완료하기':'Mark completed','처리 다시 진행':'Reopen','신고 처리 상태':'Report status','진행 중':'In progress',
  '게스트 이름 변경':'Change guest name','게스트 이름':'Guest name','사용할 게스트 이름을 정해 주세요.':'Choose your guest name.','로그인 · 회원가입':'Sign in · Register','이름을 정하면 게스트로 참여할 수 있습니다.':'Choose a name to participate as a guest.',
  '로그인':'Sign in','회원가입':'Create account','로그아웃':'Sign out','내 계정':'My account','로그인 중':'Signed in','아이디':'Username','비밀번호':'Password','비밀번호 확인':'Confirm password',
  '로그인하거나 가입한 뒤 이용할 수 있어요.':'Sign in or create an account to continue.','로그인하고 댓글 남기기':'Sign in to comment','로그인하고 회차 설정하기':'Sign in to change round settings','로그인하고 회차 시작하기':'Sign in to start the round','회차 설정은 공개되며 로그인한 회원이 변경할 수 있습니다.':'Round settings are public and can be changed by signed-in members.',

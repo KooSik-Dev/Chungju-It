@@ -14,3 +14,13 @@ test('personal work filters and due sorting exclude completed items from overdue
  const run=()=>filteredAdmin({data,updates:[],tasks,ui}).map(x=>x.id);
  assert.deepEqual(run(),['a']);ui.work='urgent';assert.deepEqual(run(),['a']);ui.work='done';assert.deepEqual(run(),['b']);ui.work='unset';assert.deepEqual(run(),['c']);ui.work='all';ui.sort='due';assert.deepEqual(run(),['a','b','c']);ui.search='현장확인';assert.deepEqual(run(),['a']);
 });
+
+test('public status changes control completed and reopened reports deterministically',async()=>{
+ const {applyReportStatuses}=await import('../src/admin.js');
+ const reports=[{id:'a',status:'공감모집'},{id:'b',status:'공감모집'}];
+ const updates=[{id:'1',reportId:'a',reportStatus:'처리완료',statusSeq:1,createdAt:'2026-01-01T00:00:00Z'},{id:'3',reportId:'a',reportStatus:'처리중',statusSeq:2,createdAt:'2026-01-01T00:00:00Z'},{id:'2',reportId:'b',reportStatus:'처리완료',statusSeq:1,createdAt:'2026-01-01T00:00:00Z'},{id:'bad',reportId:'a',reportStatus:'처리완료',statusSeq:'999'}];
+ applyReportStatuses(reports,updates);assert.equal(reports[0].status,'처리중');assert.equal(reports[1].status,'처리완료');
+ const data={reports:reports.map(r=>({...r,title:'제목',detail:'',location:'',category:'청결',likes:0,createdAt:0})),comments:{}};
+ const ui={search:'',stage:'전체',category:'전체',sort:'recent',work:'all',reportStatus:'done'};
+ assert.deepEqual(filteredAdmin({data,updates:[],ui}).map(r=>r.id),['b']);ui.reportStatus='open';assert.deepEqual(filteredAdmin({data,updates:[],ui}).map(r=>r.id),['a']);
+});
