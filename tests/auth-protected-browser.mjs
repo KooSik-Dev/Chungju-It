@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const browser=await chromium.launch({args:['--no-sandbox','--disable-dev-shm-usage','--enable-webgl','--use-angle=swiftshader','--enable-unsafe-swiftshader',...(process.env.CHROMIUM_SINGLE_PROCESS==='1'?['--single-process','--no-zygote']:[])],...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{})});
-const names=['reports','comments','supports','favorites','profiles','rounds'];const general=Object.fromEntries(names.map(k=>[k,[]])),protectedDb=Object.fromEntries(names.map(k=>[k,[]]));
+const names=['reports','comments','supports','favorites','profiles','rounds','updates','admin-tasks'];const general=Object.fromEntries(names.map(k=>[k,[]])),protectedDb=Object.fromEntries(names.map(k=>[k,[]]));
 const users=new Map(),sessions=new Map(),requests=[];let serial=0,sequence=0,mode='';
 const headers={'access-control-allow-origin':'*','access-control-allow-headers':'authorization,content-type,x-page-session','access-control-allow-methods':'POST,OPTIONS,GET,PUT,DELETE'};
 async function setup(){

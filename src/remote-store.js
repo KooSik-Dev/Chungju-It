@@ -1,7 +1,7 @@
 import { categories, statuses, imageFor } from './data.js';
 import { safeImageUrl } from './page-api.js';
 
-export const collections={reports:'reports',comments:'comments',supports:'supports',favorites:'favorites',rounds:'rounds',profiles:'profiles'};
+export const collections={reports:'reports',comments:'comments',supports:'supports',favorites:'favorites',rounds:'rounds',profiles:'profiles',updates:'updates','admin-tasks':'admin-tasks'};
 const text=(value,max)=>typeof value==='string'&&value.length>0&&value.length<=max;
 const validMeta=item=>item&&text(item.id,200)&&item.data&&typeof item.data==='object'&&!Array.isArray(item.data)&&(typeof item.revision==='number'||typeof item.revision==='string');
 const owns=(item,user)=>!!user&&item.owner_id!=null&&String(item.owner_id)===String(user.id);
