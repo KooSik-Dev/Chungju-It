@@ -26,7 +26,7 @@ function standaloneHtml() {
       html.source = output;
       // Small standalone entry points keep deep links reloadable on static hosts
       // without duplicating the large inlined application in every directory.
-      const bootstrap = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>충주잇다</title></head><body><p>충주잇다를 불러오는 중입니다.</p><noscript>JavaScript를 켜 주세요.</noscript><script>fetch('../index.html').then(function(r){if(!r.ok)throw Error('load');return r.text()}).then(function(html){document.open();document.write(html);document.close()}).catch(function(){document.body.innerHTML='<p>화면을 불러오지 못했습니다. <a href="../index.html">홈으로 돌아가기</a></p>'})<\/script></body></html>`;
+      const bootstrap = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>충주잇다</title></head><body><noscript>JavaScript를 켜 주세요.</noscript><script>fetch('../index.html').then(function(r){if(!r.ok)throw Error('load');return r.text()}).then(function(html){document.open();document.write(html);document.close()}).catch(function(){document.body.innerHTML='<p>화면을 불러오지 못했습니다. <a href="../index.html">홈으로 돌아가기</a></p>'})<\/script></body></html>`;
       for(const route of ['main','ranking','status','research','guide','activity','admin']) {
         const fileName = `${route}/index.html`;
         bundle[fileName] = {type:'asset',fileName,source:bootstrap};
