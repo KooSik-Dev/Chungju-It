@@ -1,4 +1,5 @@
 import { offlineUiTranslation } from './languages.js';
+import { extendedUiTranslation, dynamicUiTranslation } from './offline-ui.js';
 // 문구만 번역하며 신고 ID, 필터 값, 입력한 내용은 변경하지 않습니다.
 const translations = {
  '처리 완료':'Completed','처리 완료하기':'Mark completed','처리 다시 진행':'Reopen','신고 처리 상태':'Report status','진행 중':'In progress',
@@ -321,8 +322,8 @@ const translations = {
 export function translateText(value, language = 'ko') {
  if (language === 'ko' || !value) return value;
  const raw=String(value); const text=raw.trim(); if(!text)return raw;
- let result=language==='en'?translations[text]:offlineUiTranslation(text,language);
- if(language!=='en')return result?raw.replace(text,result):raw;
+ let result=language==='en'?translations[text]:(offlineUiTranslation(text,language)||extendedUiTranslation(text,language)||dynamicUiTranslation(text,language));
+ if(language!=='en'){if(!result&&text.includes(' · ')){const parts=text.split(' · ').map(part=>translateText(part,language));if(parts.some((p,i)=>p!==text.split(' · ')[i]))result=parts.join(' · ');}return result?raw.replace(text,result):raw;}
  if (!result) {
   let match;
   if ((match=text.match(/^제 (\d+)회 시민 공감$/))) result=`Community round ${match[1]}`;

@@ -22,7 +22,7 @@ export function buildSharedData(lists,clientId,guest='충주시민5624',protecte
   if(!text(r.title,80)||!text(r.detail,1000)||!text(r.location,100)||!categories.slice(1).includes(r.category)||!Number.isFinite(r.lat)||r.lat<33||r.lat>39||!Number.isFinite(r.lng)||r.lng<124||r.lng>132){skipped++;continue;}
   if(r.image&&!safeImageUrl(r.image)&&!Object.values(imageFor).includes(r.image)){skipped++;continue;}
   const id=item.protected?'protected:'+item.id:item.id,stamp=Date.parse(item.created_at);
-  reports.push({id,rawId:item.id,protected:item.protected,ownerName:item.protected?String(item.owner_name||''):'' ,revision:item.revision,category:r.category,title:r.title,detail:r.detail,location:r.location,lat:r.lat,lng:r.lng,image:r.image||imageFor[r.category],status:statuses.slice(1).includes(r.status)?r.status:'공감모집',likes:supports.get(id)?.size||0,test:true,mine:item.protected?owns(item,user):(!user&&r.clientId===clientId),createdAt:Number.isFinite(stamp)?stamp:0});
+  reports.push({id,rawId:item.id,protected:item.protected,ownerName:item.protected?String(item.owner_name||''):'' ,revision:item.revision,category:r.category,title:r.title,detail:r.detail,location:r.location,lat:r.lat,lng:r.lng,image:r.image||imageFor[r.category],status:statuses.slice(1).includes(r.status)?r.status:'공감모집',likes:supports.get(id)?.size||0,test:true,translatePublic:!item.protected||item.visibility==='public',mine:item.protected?owns(item,user):(!user&&r.clientId===clientId),createdAt:Number.isFinite(stamp)?stamp:0});
  }
  reports.sort((a,b)=>b.createdAt-a.createdAt||a.id.localeCompare(b.id));
  const reportIds=new Set(reports.map(r=>r.id)),favorites=[],favoriteItems=new Map();
@@ -32,7 +32,7 @@ export function buildSharedData(lists,clientId,guest='충주시민5624',protecte
   if(!validMeta(item)||!reportIds.has(item.data.reportId)||!text(item.data.text,300))continue;
   const author=item.protected?String(item.owner_name||item.data.author||'충주시민'):item.data.author;
   if(!text(author,64))continue;
-  (comments[item.data.reportId]||=[]).push({id:item.id,protected:item.protected,mine:item.protected?owns(item,user):(!user&&item.data.clientId===clientId),revision:item.revision,text:item.data.text,author,createdAt:Date.parse(item.created_at)||0});
+  (comments[item.data.reportId]||=[]).push({id:item.id,protected:item.protected,translatePublic:!item.protected||item.visibility==='public',mine:item.protected?owns(item,user):(!user&&item.data.clientId===clientId),revision:item.revision,text:item.data.text,author,createdAt:Date.parse(item.created_at)||0});
  }
  return {data:{reports,liked:[...liked].filter(id=>reportIds.has(id)),favorites,comments,guest},favoriteItems,skipped};
 }
