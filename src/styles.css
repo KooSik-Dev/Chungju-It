@@ -152,3 +152,5 @@ body.modal-open{overflow:hidden}.modal{overscroll-behavior:contain}.map-controls
 
 /* Keyboard-only guidance stays on larger screens. */
 @media(max-width:800px){.more-menu>[data-action=shortcuts],.search-wrap kbd{display:none}}
+.guest-name-field{display:flex;align-items:center;gap:8px;border:1px solid #dfe6f0;border-radius:11px;padding:0 12px;background:#fff}.guest-name-field span{font-weight:800;white-space:nowrap}.guest-name-field input{border:0!important;outline:0;min-width:0;flex:1;padding:12px 0!important}
+.admin-report-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}

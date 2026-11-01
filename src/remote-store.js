@@ -32,7 +32,7 @@ export function buildSharedData(lists,clientId,guest='충주시민5624',protecte
   if(!validMeta(item)||!reportIds.has(item.data.reportId)||!text(item.data.text,300))continue;
   const author=item.protected?String(item.owner_name||item.data.author||'충주시민'):item.data.author;
   if(!text(author,64))continue;
-  (comments[item.data.reportId]||=[]).push({id:item.id,protected:item.protected,mine:item.protected?owns(item,user):true,revision:item.revision,text:item.data.text,author,createdAt:Date.parse(item.created_at)||0});
+  (comments[item.data.reportId]||=[]).push({id:item.id,protected:item.protected,mine:item.protected?owns(item,user):(!user&&item.data.clientId===clientId),revision:item.revision,text:item.data.text,author,createdAt:Date.parse(item.created_at)||0});
  }
  return {data:{reports,liked:[...liked].filter(id=>reportIds.has(id)),favorites,comments,guest},favoriteItems,skipped};
 }

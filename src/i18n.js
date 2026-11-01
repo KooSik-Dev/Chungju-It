@@ -1,5 +1,7 @@
+import { offlineUiTranslation } from './languages.js';
 // 문구만 번역하며 신고 ID, 필터 값, 입력한 내용은 변경하지 않습니다.
 const translations = {
+ '게스트 이름 변경':'Change guest name','게스트 이름':'Guest name','사용할 게스트 이름을 정해 주세요.':'Choose your guest name.','로그인 · 회원가입':'Sign in · Register','이름을 정하면 게스트로 참여할 수 있습니다.':'Choose a name to participate as a guest.',
  '로그인':'Sign in','회원가입':'Create account','로그아웃':'Sign out','내 계정':'My account','로그인 중':'Signed in','아이디':'Username','비밀번호':'Password','비밀번호 확인':'Confirm password',
  '로그인하거나 가입한 뒤 이용할 수 있어요.':'Sign in or create an account to continue.','로그인하고 댓글 남기기':'Sign in to comment','로그인하고 회차 설정하기':'Sign in to change round settings','로그인하고 회차 시작하기':'Sign in to start the round','회차 설정은 공개되며 로그인한 회원이 변경할 수 있습니다.':'Round settings are public and can be changed by signed-in members.',
  '업무 기록을 이어서 확인하세요.':'Continue reviewing your work records.','회원들이 공유하는 진행 의견입니다.':'Progress notes shared by members.','회원들이 공유한 진행 의견입니다.':'Progress notes shared by members.','공유할 신고 상태를 선택하세요.':'Choose a status to share.','공유된 이야기의 상태입니다.':'This is the shared report status.',
@@ -316,9 +318,10 @@ const translations = {
 };
 
 export function translateText(value, language = 'ko') {
- if (language !== 'en' || !value) return value;
+ if (language === 'ko' || !value) return value;
  const raw=String(value); const text=raw.trim(); if(!text)return raw;
- let result=translations[text];
+ let result=language==='en'?translations[text]:offlineUiTranslation(text,language);
+ if(language!=='en')return result?raw.replace(text,result):raw;
  if (!result) {
   let match;
   if ((match=text.match(/^제 (\d+)회 시민 공감$/))) result=`Community round ${match[1]}`;
@@ -345,7 +348,7 @@ export function translateText(value, language = 'ko') {
 }
 
 export function translateElement(root, language) {
- if(language!=='en'||!root)return;
+ if(language==='ko'||!root)return;
  const translateNode=node=>{
   if(node.nodeType===Node.TEXT_NODE){
    const parent=node.parentElement;
