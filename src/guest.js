@@ -26,3 +26,10 @@ export function saveGuest(item){
  try{localStorage.setItem(cookieName,raw);stored=true;}catch{}return stored;
 }
 export function newGuestSuffix(){const values=new Uint32Array(1);crypto.getRandomValues(values);return String(1000+values[0]%9000);}
+
+export function clearGuest(){
+ let ok=true;
+ try{document.cookie=`${cookieName}=; Max-Age=0; Path=/; SameSite=Lax${location.protocol==='https:'?'; Secure':''}`;if(document.cookie.split('; ').some(x=>x.startsWith(cookieName+'=')))ok=false;}catch{}
+ try{localStorage.removeItem(cookieName);if(localStorage.getItem(cookieName))ok=false;}catch{}
+ return ok;
+}

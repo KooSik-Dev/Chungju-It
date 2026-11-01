@@ -8,7 +8,7 @@ const db=Object.fromEntries(['reports','comments','supports','favorites','profil
 let serial=0,mode='',uploaded=0;const requests=[];const headers={'access-control-allow-origin':'*','access-control-allow-headers':'authorization,content-type','access-control-allow-methods':'POST,OPTIONS,GET,PUT,DELETE'};
 const image=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a8XcAAAAASUVORK5CYII=','base64');
 async function prepare(){
- const ctx=await browser.newContext({viewport:{width:1100,height:900},reducedMotion:'reduce'});const page=await ctx.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',dialog=>dialog.accept());
+ const ctx=await browser.newContext({viewport:{width:1100,height:900},reducedMotion:'reduce'});const page=await ctx.newPage();const errors=[];await ctx.addInitScript(()=>{try{localStorage.setItem('chungju-entry-seen','1');}catch{}});page.on('pageerror',e=>errors.push(e.message));page.on('dialog',dialog=>dialog.accept());
  await page.route('https://tiles.openfreemap.org/**',r=>r.abort());
  await page.route('https://www.koosik.kr/**',async route=>{
   const req=route.request(),url=new URL(req.url()),method=req.method();if(method==='OPTIONS')return route.fulfill({status:204,headers});
@@ -37,11 +37,11 @@ for(let i=0;i<52;i++)db.reports.push({id:'bulk-'+i,revision:1,created_at:new Dat
 db.comments.push({id:'old-comment',revision:1,created_at:new Date().toISOString(),data:{reportId:'bulk-51',text:'기존 댓글',author:'이웃'}});
 const a=await prepare(),p=a.page;
 assert.equal(await p.locator('.remote-bar, #remote-status').count(),0);assert.ok(requests.some(x=>x.url.includes('offset=50')));
-await p.locator('.header [data-action=report]').click();await p.locator('#auth-form').waitFor();assert.match(await p.locator('#auth-api-status').innerText(),/로그인/);assert.equal(await p.locator('#report-form').count(),0);await p.locator('.modal-head button').click();
+await p.locator('.header [data-action=report]').click();await p.locator('#guest-form').waitFor();assert.ok(await p.locator('[data-action=guest-back]').isVisible());assert.equal(await p.locator('#report-form').count(),0);await p.locator('.modal-head button').click();
 await p.locator('[data-detail="bulk-51"]').first().click();assert.match(await p.locator('.notes').innerText(),/기존 댓글/);assert.equal(await p.locator('[data-edit-report],[data-delete-report],[data-delete-note],#note-form').count(),0);
-await p.locator('.detail-actions [data-like]').click();await p.locator('#auth-form').waitFor();assert.equal(db.supports.length,0);await p.locator('.modal-head button').click();
-await p.locator('[data-detail="bulk-51"]').first().click();await p.locator('.detail-actions [data-favorite]').click();await p.locator('#auth-form').waitFor();assert.equal(db.favorites.length,0);await p.locator('.modal-head button').click();
-await p.locator('[data-detail="bulk-51"]').first().click();await p.locator('[data-login-comment]').click();await p.locator('#auth-form').waitFor();assert.equal(db.comments.length,1);await p.locator('.modal-head button').click();
+await p.locator('.detail-actions [data-like]').click();await p.locator('#guest-form').waitFor();assert.equal(db.supports.length,0);await p.locator('.modal-head button').click();
+await p.locator('[data-detail="bulk-51"]').first().click();await p.locator('.detail-actions [data-favorite]').click();await p.locator('#guest-form').waitFor();assert.equal(db.favorites.length,0);await p.locator('.modal-head button').click();
+await p.locator('[data-detail="bulk-51"]').first().click();await p.locator('[data-login-comment]').click();await p.locator('#guest-form').waitFor();assert.equal(db.comments.length,1);await p.locator('.modal-head button').click();
 await p.locator('[data-action=rounds]').first().click();assert.equal(await p.locator('[data-action=start-round]').count(),0);await p.locator('[data-action=round-login]').click();await p.locator('#auth-form').waitFor();assert.equal(db.rounds.length,0);await p.locator('.modal-head button').click();
 await p.locator('.utility [data-action=font]').click();await p.waitForTimeout(200);assert.equal(db.profiles.length,0);
 mode='load401';await p.locator('footer [data-action=reload-remote]').click();await p.locator('#remote-error').filter({hasText:'401'}).waitFor();await p.locator('#remote-error [data-action=reload-remote]').click();await p.locator('.list-panel[data-remote-ready="true"]').waitFor();assert.equal(await p.locator('#remote-error').isHidden(),true);
