@@ -1,6 +1,7 @@
 // 문구만 번역하며 신고 ID, 필터 값, 입력한 내용은 변경하지 않습니다.
 const translations = {
  '로그인':'Sign in','회원가입':'Create account','로그아웃':'Sign out','내 계정':'My account','로그인 중':'Signed in','아이디':'Username','비밀번호':'Password','비밀번호 확인':'Confirm password',
+ '업무 기록을 이어서 확인하세요.':'Continue reviewing your work records.','회원들이 공유하는 진행 의견입니다.':'Progress notes shared by members.','회원들이 공유한 진행 의견입니다.':'Progress notes shared by members.','공유할 신고 상태를 선택하세요.':'Choose a status to share.','공유된 이야기의 상태입니다.':'This is the shared report status.',
  '함께 시작해요':'Let’s get started','다시 만나서 반가워요':'Welcome back','어디서든 내 활동을 이어가요.':'Continue your activity from any device.',
  '가입하고 시작하기':'Create account','처음 오셨나요? 회원가입':'New here? Create an account','이미 계정이 있나요? 로그인':'Already have an account? Sign in',
  '내 신고와 관심 목록, 설정을 계정으로 관리합니다. 공개 신고·댓글과 사진은 다른 방문자에게 보입니다.':'Your reports, favorites and settings are associated with your account. Public reports, comments and photos are visible to visitors.',
