@@ -5,7 +5,7 @@ export function routeInfo(location){
  if(parts.at(-1)==='index.html')parts.pop();
  const last=parts.at(-1),pathEntry=Object.entries(pagePaths).find(([,path])=>path===last);
  if(pathEntry)parts.pop();
- const hash=location.hash?.slice(1),legacy=validPages.includes(hash)?hash:null;
+ const hash=location.hash?.slice(1),legacy=validPages.includes(hash)&&(location.protocol==='file:'||hash!=='admin')?hash:null;
  return {page:location.protocol==='file:'?(legacy||pathEntry?.[0]||'map'):(pathEntry?.[0]||legacy||'map'),base:parts.length?'/'+parts.join('/'):''};
 }
 export function pageUrl(location,page,base){

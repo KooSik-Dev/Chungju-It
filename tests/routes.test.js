@@ -10,4 +10,6 @@ test('hosted root and deep links preserve a deployment subdirectory',()=>{
 test('legacy hash and local files remain usable without rewriting file paths',()=>{
  const location=new URL('file:///tmp/site/index.html#admin');assert.equal(routeInfo(location).page,'admin');assert.equal(pageUrl(location,'map',routeInfo(location).base),'#map');
  assert.equal(routeInfo(new URL('https://example.com/project/index.html#rank')).page,'rank');
+ assert.equal(routeInfo(new URL('https://example.com/project/index.html#admin')).page,'map');
+ assert.equal(routeInfo(new URL('https://example.com/project/admin')).page,'admin');
 });

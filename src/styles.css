@@ -149,3 +149,6 @@ body.modal-open{overflow:hidden}.modal{overscroll-behavior:contain}.map-controls
 @media(max-width:550px){.admin-report-evidence{grid-template-columns:1fr 1fr;gap:10px}.admin-report-evidence img{height:105px}.admin-report-evidence strong{font-size:11px}.admin-intro{padding-top:26px}.admin-checklist{display:grid}}
 .admin-queue-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.admin-report-id{display:block;color:#99a5b6;font-size:10px;margin-top:9px;overflow-wrap:anywhere}
 .admin-rows{grid-template-columns:minmax(0,1fr)}.admin-row{min-width:0}
+
+/* Keyboard-only guidance stays on larger screens. */
+@media(max-width:800px){.more-menu>[data-action=shortcuts],.search-wrap kbd{display:none}}
