@@ -39,5 +39,5 @@ export function adminPage({data,updates,tasks,ui,signedIn,user,remoteReady,remot
 }
 export function publicProgress({updates,id,esc}){
  const entries=updates.filter(x=>x.reportId===id);if(!entries.length)return '';
- return `<section class="public-updates"><span class="section-kicker">PUBLIC UPDATES</span><h4>함께 남긴 진행 기록 <span>${entries.length}</span></h4><p>회원들이 공유한 진행 의견입니다.</p><div class="admin-timeline">${entries.map(entry=>`<article><i></i><div><div class="admin-timeline-heading"><strong>${esc(entry.stage)}</strong><small>${esc(date(entry.createdAt))}</small></div><p data-no-translate>${esc(entry.text)}</p><small data-no-translate>${esc(entry.author)} · 공개 기록</small></div></article>`).join('')}</div></section>`;
+ return `<section class="public-updates"><span class="section-kicker">PUBLIC UPDATES</span><h4>함께 남긴 진행 기록 <span>${entries.length}</span></h4><p>회원들이 공유한 진행 의견입니다.</p><div class="admin-timeline">${entries.map(entry=>`<article><i></i><div><div class="admin-timeline-heading"><strong>${esc(entry.stage)}</strong><small>${esc(date(entry.createdAt))}</small></div><p data-no-translate data-translate-public>${esc(entry.text)}</p><small data-no-translate>${esc(entry.author)} · 공개 기록</small></div></article>`).join('')}</div></section>`;
 }
