@@ -21,8 +21,9 @@ export function buildSharedData(lists,clientId,guest='충주시민5624',protecte
   const r=item.data;
   if(!text(r.title,80)||!text(r.detail,1000)||!text(r.location,100)||!categories.slice(1).includes(r.category)||!Number.isFinite(r.lat)||r.lat<33||r.lat>39||!Number.isFinite(r.lng)||r.lng<124||r.lng>132){skipped++;continue;}
   if(r.image&&!safeImageUrl(r.image)&&!Object.values(imageFor).includes(r.image)){skipped++;continue;}
+  const images=Array.isArray(r.images)?r.images.filter(url=>typeof url==='string'&&url.length<=2048&&(safeImageUrl(url)||Object.values(imageFor).includes(url))).slice(0,5):[];
   const id=item.protected?'protected:'+item.id:item.id,stamp=Date.parse(item.created_at);
-  reports.push({id,rawId:item.id,protected:item.protected,ownerName:item.protected?String(item.owner_name||''):'' ,revision:item.revision,category:r.category,title:r.title,detail:r.detail,location:r.location,lat:r.lat,lng:r.lng,image:r.image||imageFor[r.category],status:statuses.slice(1).includes(r.status)?r.status:'공감모집',likes:supports.get(id)?.size||0,test:true,translatePublic:!item.protected||item.visibility==='public',mine:item.protected?owns(item,user):r.clientId===clientId,createdAt:Number.isFinite(stamp)?stamp:0});
+  reports.push({id,rawId:item.id,protected:item.protected,ownerName:item.protected?String(item.owner_name||''):'' ,revision:item.revision,category:r.category,title:r.title,detail:r.detail,location:r.location,lat:r.lat,lng:r.lng,image:r.image||images[0]||imageFor[r.category],images,status:statuses.slice(1).includes(r.status)?r.status:'공감모집',likes:supports.get(id)?.size||0,test:true,translatePublic:!item.protected||item.visibility==='public',mine:item.protected?owns(item,user):r.clientId===clientId,createdAt:Number.isFinite(stamp)?stamp:0});
  }
  reports.sort((a,b)=>b.createdAt-a.createdAt||a.id.localeCompare(b.id));
  const reportIds=new Set(reports.map(r=>r.id)),favorites=[],favoriteItems=new Map();

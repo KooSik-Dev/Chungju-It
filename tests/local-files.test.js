@@ -21,7 +21,7 @@ class Dir {
     };
   }
 }
-const snapshot = () => ({version:1,data:{reports:[{id:'test-123',image:'data:image/png;base64,iVBORw0KGgo='}],liked:[],favorites:[],comments:{},guest:'Local'},round:{},compareIds:[]});
+const snapshot = () => ({version:1,data:{reports:[{id:'test-123',image:'data:image/png;base64,iVBORw0KGgo=',images:['data:image/png;base64,iVBORw0KGgo=','data:image/gif;base64,R0lGODlhAQABAAAAACw=']}],liked:[],favorites:[],comments:{},guest:'Local'},round:{},compareIds:[]});
 
 test('accounts, photos and changes persist as files with no plaintext password',async t=>{
   const path=await mkdtemp(join(tmpdir(),'chungju-files-'));t.after(()=>rm(path,{recursive:true,force:true}));
@@ -31,11 +31,14 @@ test('accounts, photos and changes persist as files with no plaintext password',
   assert.equal((await authenticate(root,'홍길동','password123')).id,one.id);
   await assert.rejects(authenticate(root,'홍길동','wrong123'),/올바르지/);
   await assert.rejects(register(root,'홍길동','password123',snapshot()),/이미 사용/);
-  const img=(await readdir(join(path,'img')))[0];
+  const files=await readdir(join(path,'img'));
+  assert.equal(files.length,2);
+  const img=files.find(name=>name.endsWith('.png'));
   assert.match(img,/^[a-f0-9]{64}\.png$/);assert.deepEqual(await readFile(join(path,'img',img)),Buffer.from('iVBORw0KGgo=','base64'));
+  assert.ok(files.some(name=>/^[a-f0-9]{64}\.gif$/.test(name)));
   const json=await readFile(join(path,'data','users',one.id+'.json'),'utf8');
   assert.match(json,/img\//);assert.doesNotMatch(json,/base64/);
-  const restored=await readSnapshot(root,one.id);assert.equal(restored.data.reports[0].image,'data:image/png;base64,iVBORw0KGgo=');
+  const restored=await readSnapshot(root,one.id);assert.equal(restored.data.reports[0].image,'data:image/png;base64,iVBORw0KGgo=');assert.deepEqual(restored.data.reports[0].images,['data:image/png;base64,iVBORw0KGgo=','data:image/gif;base64,R0lGODlhAQABAAAAACw=']);
   restored.data.liked.push('test-123');await writeSnapshot(root,one.id,restored);
   assert.deepEqual((await readSnapshot(root,one.id)).data.liked,['test-123']);
   await writeFile(join(path,'img',img),'corrupt');await assert.rejects(readSnapshot(root,one.id),/손상/);

@@ -316,6 +316,13 @@ const translations = {
  '대소원면 교차로':'Intersection, Daesowon-myeon','칠금동 충주공용버스터미널 앞':'Chungju bus terminal, Chilgeum-dong',
  '지현동 통학로 일대':'School route, Jihyeon-dong','달천동 달천강변':'Dalcheon riverbank, Dalcheon-dong',
  '성서동 구 중앙어울림시장 부지':'Former Jungang market site, Seongseo-dong','성서동 충주천 산책로':'Chungju stream path, Seongseo-dong',
+ '사진 크게 보기':'View larger photo',
+ '신고 사진 크게 보기':'View report photos',
+ '이전 사진':'Previous photo',
+ '다음 사진':'Next photo',
+ '신고 사진 목록':'Report photo list',
+ '선택 · 장당 5MB 이하 · 최대 5장':'Optional · up to 5MB each · max 5 photos',
+ '사진 1':'Photo 1',
  '호암동 호암지 산책로':'Hoamji walking path, Hoam-dong',
 };
 
@@ -343,6 +350,9 @@ export function translateText(value, language = 'ko') {
   else if ((match=text.match(/^(.*) 공감 ([\d,]+)건$/))) result=`${translateText(match[1],language)}: ${match[2]} supports`;
   else if ((match=text.match(/^(.*) 위치 보기$/))) result=`View ${translateText(match[1],language)} on map`;
   else if ((match=text.match(/^(.*) 관련 (예시|신고) 사진$/))) result=`${translateText(match[1],language)} ${match[2]==='예시'?'example':'report'} photo`;
+  else if ((match=text.match(/^사진 (\d+)장 선택됨 · 최대 (\d+)장$/))) result=`${match[1]} photos selected · up to ${match[2]}`;
+  else if ((match=text.match(/^사진 (\d+)\/(\d+) 업로드 중…$/))) result=`Uploading photo ${match[1]}/${match[2]}…`;
+  else if ((match=text.match(/^사진 (\d+)$/))) result=`Photo ${match[1]}`;
   else if (text.includes(' · ')) result=text.split(' · ').map(part=>translateText(part,language)).join(' · ');
  }
  if(!result) return raw;

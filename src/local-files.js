@@ -82,15 +82,18 @@ export async function writeSnapshot(root,id,snapshot) {
   if(!safeId(id)) throw Error('계정 식별자가 올바르지 않습니다.');
   const copy=JSON.parse(JSON.stringify(snapshot));
   if(!copy?.data?.reports || !Array.isArray(copy.data.reports)) throw Error('기록 형식이 올바르지 않습니다.');
+  const dir=await folder(root,['img'],true);
+  const store=async value => {
+    if(typeof value!=='string' || !value.startsWith('data:')) return value;
+    const photo=decodeDataImage(value);
+    const hash=hex(await crypto.subtle.digest('SHA-256',photo.bytes));
+    const name=`${hash}.${photo.ext}`;
+    await write(dir,name,new Blob([photo.bytes],{type:photo.type}));
+    return `img/${name}`;
+  };
   for(const report of copy.data.reports) {
-    if(typeof report.image==='string' && report.image.startsWith('data:')) {
-      const photo=decodeDataImage(report.image);
-      const hash=hex(await crypto.subtle.digest('SHA-256',photo.bytes));
-      const name=`${hash}.${photo.ext}`;
-      const dir=await folder(root,['img'],true);
-      await write(dir,name,new Blob([photo.bytes],{type:photo.type}));
-      report.image=`img/${name}`;
-    }
+    report.image=await store(report.image);
+    if(Array.isArray(report.images)) report.images=await Promise.all(report.images.map(store));
   }
   await write(await folder(root,['data','users'],true),`${id}.json`,JSON.stringify(copy,null,2));
 }
@@ -99,19 +102,22 @@ export async function readSnapshot(root,id) {
   const text=await readText(await folder(root,['data','users']),`${id}.json`);
   let snapshot; try { snapshot=JSON.parse(text); } catch { throw Error('기록 파일이 손상되었습니다.'); }
   if(!snapshot || snapshot.version!==1 || !snapshot.data || !Array.isArray(snapshot.data.reports)) throw Error('기록 파일 형식이 올바르지 않습니다.');
+  const load=async value => {
+    if(typeof value!=='string' || !value.startsWith('img/')) return value;
+    const match=/^img\/([a-f0-9]{64})\.(jpg|png|webp|gif)$/.exec(value);
+    if(!match) throw Error('사진 경로가 올바르지 않습니다.');
+    const file=await (await (await folder(root,['img'])).getFileHandle(`${match[1]}.${match[2]}`)).getFile();
+    if(file.size>1024*1024) throw Error('저장된 사진이 너무 큽니다.');
+    const bytes=new Uint8Array(await file.arrayBuffer());
+    const digest=hex(await crypto.subtle.digest('SHA-256',bytes));
+    if(digest!==match[1]) throw Error('저장된 사진이 손상되었습니다.');
+    let binary=''; for(let i=0;i<bytes.length;i+=0x8000) binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));
+    const mime={jpg:'image/jpeg',png:'image/png',webp:'image/webp',gif:'image/gif'}[match[2]];
+    return `data:${mime};base64,${btoa(binary)}`;
+  };
   for(const report of snapshot.data.reports) {
-    if(typeof report.image==='string' && report.image.startsWith('img/')) {
-      const match=/^img\/([a-f0-9]{64})\.(jpg|png|webp|gif)$/.exec(report.image);
-      if(!match) throw Error('사진 경로가 올바르지 않습니다.');
-      const file=await (await (await folder(root,['img'])).getFileHandle(`${match[1]}.${match[2]}`)).getFile();
-      if(file.size>1024*1024) throw Error('저장된 사진이 너무 큽니다.');
-      const bytes=new Uint8Array(await file.arrayBuffer());
-      const digest=hex(await crypto.subtle.digest('SHA-256',bytes));
-      if(digest!==match[1]) throw Error('저장된 사진이 손상되었습니다.');
-      let binary=''; for(let i=0;i<bytes.length;i+=0x8000) binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));
-      const mime={jpg:'image/jpeg',png:'image/png',webp:'image/webp',gif:'image/gif'}[match[2]];
-      report.image=`data:${mime};base64,${btoa(binary)}`;
-    }
+    report.image=await load(report.image);
+    if(Array.isArray(report.images)) report.images=await Promise.all(report.images.map(load));
   }
   return snapshot;
 }
