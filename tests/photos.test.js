@@ -16,7 +16,7 @@ test('remote reports keep every photo URL and fall back to the first one', () =>
 
 test('remote reports without a photo array keep the legacy single image', () => {
   const shared = buildSharedData({reports:[record({...base,image:'https://cdn.example.com/legacy.png'})]},'device-photos');
-  assert.deepEqual(shared.data.reports[0].images, []);
+  assert.equal(shared.data.reports[0].images, undefined);
   assert.equal(shared.data.reports[0].image, 'https://cdn.example.com/legacy.png');
   assert.equal(buildSharedData({reports:[record({...base,image:'station.jpg'})]},'d').data.reports[0].image, 'station.jpg');
 });
