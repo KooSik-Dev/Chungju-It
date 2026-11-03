@@ -15,6 +15,21 @@ export function intakeWindow(round, createdAt) {
   return { number: round.number, start, end: start + length, length, serverAnchored: anchored };
 }
 
+export const CYCLE_DAYS = 7;
+
+// 접수 기간은 7일을 한 주기로 반복됩니다. 서버에 저장된 회차 시작 시각을 기준으로
+// 현재 주기를 계산하므로 접속 시점·기기와 무관하게 모두 같은 주기와 남은 시간을 봅니다.
+export function intakeCycle(round, createdAt, now = Date.now()) {
+  const base = intakeWindow(round, createdAt);
+  if (!base) return null;
+  const cycle = CYCLE_DAYS * DAY;
+  const anchor = base.start;
+  const elapsed = Number(now) - anchor;
+  const index = Number.isFinite(elapsed) && elapsed > 0 ? Math.floor(elapsed / cycle) : 0;
+  const start = anchor + index * cycle;
+  return { index, start, end: start + cycle, length: cycle, anchor, base };
+}
+
 export function countdownParts(end, now = Date.now()) {
   const remaining = Math.max(0, Number(end) - Number(now));
   const totalSeconds = Number.isFinite(remaining) ? Math.ceil(remaining / 1000) : 0;

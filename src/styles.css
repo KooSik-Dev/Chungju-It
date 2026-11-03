@@ -237,7 +237,8 @@ body.language-gate-open{overflow:hidden}
 .admin-detail-map{height:220px;margin:12px 0 8px;border:1px solid #e6ecf4;border-radius:14px;overflow:hidden;background:#eef2f8}
 .admin-location-note{display:block;font-size:11px;color:#8a97a9}
 .admin-location-empty{display:grid;place-items:center;min-height:100px;margin-top:10px;border:1px dashed #dbe4f0;border-radius:14px;background:#fafcff;color:#8a97a9;font-size:12px;font-weight:700}
-@media(max-width:800px){.admin-detail-map{height:190px}.severity-options{grid-template-columns:1fr}}
+@media(max-width:800px){.admin-detail-map{height:190px}
+.severity-options{grid-template-columns:1fr}}
 /* 동네 보관함 분류: 마우스 드래그·터치 스와이프 모두 지원 */
 .activity-tabs{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:thin}
 .activity-tabs button{flex:0 0 auto}
@@ -311,18 +312,35 @@ body.language-gate-open{overflow:hidden}
 .intake-period{position:relative;z-index:1;margin-top:16px;width:min(520px,50%);padding:13px 16px;border:1px solid #dbe6fb;border-radius:15px;background:#ffffffd9;display:grid;gap:7px;backdrop-filter:blur(6px)}
 .intake-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 .intake-kicker{font-size:10px;font-weight:800;letter-spacing:.03em;color:#3f63b8;background:#e4edff;border-radius:99px;padding:4px 9px;white-space:nowrap}
-.intake-range{font-size:13px;font-weight:800;color:#1c3155;font-variant-numeric:tabular-nums;letter-spacing:-.2px}
+.intake-range{white-space:nowrap;font-size:13px;font-weight:800;color:#1c3155;font-variant-numeric:tabular-nums;letter-spacing:-.2px}
 .intake-clock{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:850;color:#2c4fd2;font-variant-numeric:tabular-nums;letter-spacing:-.2px}
 .intake-clock i{font-style:normal;color:#b9c6dd;font-weight:600}
 .intake-clock .intake-days{color:#1f4fd8}
 .intake-note{margin:0;font-size:11px;line-height:1.5;color:#6b7c92}
-.admin-hero .intake-period{width:100%;max-width:520px;margin-top:14px;background:#ffffff1f;border-color:#ffffff3d}
+.admin-hero .intake-period{width:min(430px,100%);max-width:430px;margin:0;padding:16px 18px;border-radius:16px;background:#ffffff1f;border-color:#ffffff3d}
+@media(min-width:1260px){
+.home-hero{display:grid;grid-template-columns:max-content minmax(0,1fr);grid-template-areas:"copy intake" "stat intake";column-gap:28px;align-content:start;align-items:start;padding-right:calc(48% + 16px)}
+.home-hero .hero-copy{grid-area:copy;max-width:none;justify-self:start}
+.home-hero .hero-stat{grid-area:stat;margin-top:16px}
+.home-hero>.intake-period{grid-area:intake;align-self:center;justify-self:stretch;width:100%;max-width:432px;margin:0;padding:20px 21px 18px;border-radius:18px;gap:10px;background:#ffffffcc;box-shadow:0 12px 26px #3d5a920f}
+.home-hero .intake-kicker{font-size:11px;padding:5px 10px}
+.home-hero .intake-range{font-size:15px}
+.home-hero .intake-clock{font-size:clamp(19px,1.75vw,24px);gap:6px}
+.home-hero .intake-clock .intake-days{font-size:1.34em}
+.home-hero .intake-note{font-size:11.5px;line-height:1.55}
+.admin-hero .intake-clock{font-size:19px;gap:6px}
+.admin-hero .intake-clock .intake-days{font-size:1.3em}
+.admin-hero .intake-range{font-size:14px}
+.admin-hero .intake-note{font-size:11px;line-height:1.5}
+}
 .admin-hero .intake-kicker{background:#ffffff26;color:#e7efff}
 .admin-hero .intake-range,.admin-hero .intake-clock .intake-days{color:#fff}
 .admin-hero .intake-clock{color:#dbe7ff}
 .admin-hero .intake-clock i{color:#ffffff5c}
 .admin-hero .intake-note{color:#d7e2f6}
-@media(max-width:800px){.intake-period{width:100%;max-width:100%;margin-top:12px;padding:11px 13px}.intake-clock{font-size:13px;gap:5px;flex-wrap:wrap}.intake-range{font-size:12px}}
+@media(max-width:1259px){.admin-hero .intake-period{margin-top:14px}}
+@media(max-width:850px){.admin-hero .intake-period{width:100%;max-width:100%;margin-top:16px}}
+@media(max-width:800px){.intake-period{width:100%;max-width:100%;margin-top:12px;padding:11px 13px}.intake-clock{font-size:13px;gap:5px;flex-wrap:wrap}.intake-range{font-size:12px}.home-hero .intake-clock{font-size:15px}.home-hero .intake-clock .intake-days{font-size:1.28em}}
 @media(max-width:390px){.intake-clock{font-size:12px}.intake-note{font-size:10px}}
 /* 민원 신고 위치(좌표) 필수 지정 */
 .required-mark{font-style:normal;color:#e0644f;font-weight:800}
@@ -340,3 +358,21 @@ body.language-gate-open{overflow:hidden}
 .admin-report-evidence .admin-evidence-photo{width:100%;max-width:100%;min-width:0}
 .admin-report-evidence .admin-evidence-photo img{width:100%;max-width:100%}
 .admin-evidence-photos{min-width:0}
+.admin-detail-head .admin-detail-view{background:#2467e8;border-color:#2467e8;color:#fff}
+.modal.admin-detail-modal{width:min(100%,760px);max-width:760px}
+.modal .admin-detail-body{padding:22px 26px 26px;display:grid;gap:14px}
+.admin-modal-head .admin-kicker{font-size:11px}
+.admin-modal-head h3{margin:7px 0 9px;font-size:21px;line-height:1.32;letter-spacing:-.02em;color:#1b2d49}
+.admin-modal-tags{display:flex;flex-wrap:wrap;align-items:center;gap:7px;font-size:11.5px;color:#61758f}
+.admin-modal-tags>span:not(.admin-severity){border:1px solid #e5ecf7;border-radius:99px;padding:3px 9px;background:#f7f9fe;font-variant-numeric:tabular-nums}
+.admin-modal-location{margin:9px 0 0;font-size:12.5px;font-weight:700;color:#4a5f7d}
+.admin-detail-modal .admin-detail-text{margin:2px 0}
+.admin-modal-photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px;min-width:0}
+.admin-modal-photos .admin-evidence-photo{height:96px}
+.admin-modal-photos img{width:100%;height:100%;object-fit:cover}
+.admin-detail-modal .admin-evidence-coords{margin:0}
+.admin-detail-modal #admin-modal-map{height:190px;margin:0}
+.admin-detail-modal .admin-meta{margin:0;color:#61758f;font-size:11.5px}
+.admin-modal-empty{margin:0;font-size:12px;color:#71839a;background:#f5f8fd;border-radius:11px;padding:12px 14px}
+.admin-modal-history .admin-section-title h3{font-size:15px}
+@media(max-width:800px){.modal .admin-detail-body{padding:0 0 8px;gap:11px}.admin-detail-modal #admin-modal-map{height:150px}.admin-modal-photos .admin-evidence-photo{height:86px}.admin-modal-head h3{font-size:18px}.admin-detail-modal .admin-detail-text{margin:0}}

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { intakeWindow, countdownParts, periodText, INTAKE_NOTE } from '../src/intakes.js';
+import { intakeWindow, intakeCycle, countdownParts, periodText, INTAKE_NOTE, CYCLE_DAYS } from '../src/intakes.js';
 
 const DAY = 24 * 60 * 60 * 1000;
 const start = Date.UTC(2026, 10, 2, 15, 0, 0); // 2026-11-03 00:00 KST
@@ -49,4 +49,35 @@ test('접수 기간 날짜는 한국 시간 기준 YYYY.MM.DD 로 표시한다',
   assert.equal(periodText(start + 7 * DAY), '2026.11.10');
   assert.equal(periodText('잘못된 값'), '');
   assert.match(INTAKE_NOTE, /공감을 많이 받은 민원부터/);
+});
+
+test('접수 기간은 7일 주기로 반복되고 주기 계산은 서버 시작 시각을 기준으로 한다', () => {
+  assert.equal(CYCLE_DAYS, 7);
+  const created = new Date(start).toISOString();
+  // 첫 주기
+  const first = intakeCycle(round, created, start + 3 * 3600 * 1000);
+  assert.deepEqual([first.index, first.start, first.end], [0, start, start + 7 * DAY]);
+  // 주기가 끝난 뒤에는 다음 주기로 넘어가고 남은 시간은 다시 7일에서 줄어든다.
+  const second = intakeCycle(round, created, start + 7 * DAY + 3 * 3600 * 1000);
+  assert.deepEqual([second.index, second.start, second.end], [1, start + 7 * DAY, start + 14 * DAY]);
+  const parts = countdownParts(second.end, start + 7 * DAY + 3 * 3600 * 1000);
+  assert.deepEqual([parts.days, parts.hours], [6, 21]);
+  // 여러 주기가 지나도 같은 규칙으로 계산된다(음수·0초 고정 없음).
+  const far = intakeCycle(round, created, start + 30 * DAY);
+  assert.equal(far.index, 4);
+  assert.equal(far.start, start + 28 * DAY);
+  assert.ok(countdownParts(far.end, start + 30 * DAY).days >= 5);
+  // 같은 주기 안에서는 접속 시점이 달라도 기간은 같고 남은 시간만 줄어든다.
+  const atSameTime = intakeCycle(round, created, start + 9 * DAY);
+  const later = intakeCycle(round, created, start + 9 * DAY + 3600 * 1000);
+  assert.deepEqual([later.index, later.start, later.end], [atSameTime.index, atSameTime.start, atSameTime.end]);
+  assert.equal(countdownParts(later.end, start + 9 * DAY + 3600 * 1000).totalSeconds + 3600, countdownParts(atSameTime.end, start + 9 * DAY).totalSeconds);
+});
+
+test('주기 기준 시각이 없으면 기간을 만들지 않는다', () => {
+  assert.equal(intakeCycle(null, new Date(start).toISOString(), start), null);
+  assert.equal(intakeCycle({ start, end: start }, new Date(start).toISOString(), start), null);
+  // 기기 시계가 시작 시각보다 이전이어도 첫 주기로 계산한다.
+  const early = intakeCycle(round, new Date(start).toISOString(), start - DAY);
+  assert.deepEqual([early.index, early.start, early.end], [0, start, start + 7 * DAY]);
 });

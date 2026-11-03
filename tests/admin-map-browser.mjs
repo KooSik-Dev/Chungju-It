@@ -118,17 +118,55 @@ await page.locator('#admin-inspector h2').filter({hasText:'공감 많은 신고'
 assert.equal(await page.locator('[data-admin-select="map-b"]').getAttribute('class').then(value=>value.includes('selected')),true);
 assert.equal(await page.locator('#admin-map [data-admin-marker="map-b"]').getAttribute('class').then(value=>value.includes('selected')),true);
 
-// 3-1) 마커 클릭 뒤에도 팝업이 열려 있고, '상세 확인'을 누르면 같은 민원의 상세가 열린다.
+// 3-1) 마커를 고르면 요약 팝업이 뜨고, '상세 확인'은 화면 이동 없이 상세 팝업을 연다.
 await page.locator('#admin-map .maplibregl-popup').filter({hasText:'공감 많은 신고'}).waitFor();
 assert.equal(await page.locator('[data-admin-map-open="map-b"]').count(),1);
+const mapView=()=>page.evaluate(()=>{const marker=document.querySelector('#admin-map [data-admin-marker="map-b"]');const canvas=document.querySelector('#admin-map .maplibregl-canvas');if(!marker||!canvas)return '';const box=marker.getBoundingClientRect();return [Math.round(box.x),Math.round(box.y),Math.round(canvas.getBoundingClientRect().width)].join('/');});
+await page.waitForTimeout(700);
+const viewBefore=await mapView();
+const scrollBefore=await page.evaluate(()=>window.scrollY);
 await page.locator('[data-admin-map-open="map-b"]').click();
-await page.locator('#admin-inspector .admin-detail-head h2').filter({hasText:'공감 많은 신고'}).waitFor();
-assert.match(await page.locator('#admin-inspector').innerText(),/공감 많은 신고/);
-assert.match(await page.locator('#admin-inspector').innerText(),/공감 많은 신고 상세 내용입니다/);
-assert.equal(await page.evaluate(()=>document.activeElement?.tagName+'|'+(document.activeElement?.textContent||'')),'H2|공감 많은 신고','상세로 이동하면 제목으로 초점이 간다');
+await page.locator('#modal-root .modal.admin-detail-modal').waitFor();
+assert.equal(await page.locator('#modal-root .modal-backdrop').count(),1);
+assert.equal(await page.evaluate(()=>window.scrollY),scrollBefore,'상세 보기는 페이지를 아래로 스크롤하지 않는다');
+assert.equal(await mapView(),viewBefore,'상세 팝업을 열어도 지도 중심·확대는 그대로다');
+const detailText=await page.locator('#modal-root .admin-detail-modal').innerText();
+assert.match(detailText,/공감 많은 신고/,'제목');
+assert.match(detailText,/공감 많은 신고 상세 내용입니다/,'전체 내용');
+assert.match(detailText,/🔴 매우 심각/,'심각도');
+assert.match(detailText,/충주시 map-b/,'위치');
+assert.match(detailText,/36\.9512, 127\.8712/,'좌표');
+assert.match(detailText,/\d{2}\.\s*\d{2}\./,'날짜');
+assert.equal(await page.locator('#modal-root [data-admin-modal-photo]').count(),2,'첨부 사진을 모두 보여 준다');
+assert.equal(await page.locator('#modal-root #admin-modal-map').count(),1,'팝업 안에도 위치 지도를 보여 준다');
+assert.equal(await page.locator('#admin-inspector .admin-detail-head h2').count(),1,'기존 상세 화면은 그대로 유지된다');
 assert.equal(await page.locator('#admin-inspector [data-admin-photo]').count(),2,'상세에는 저장된 사진이 모두 보인다');
 
-// 3-2) 좌표 복사 UI는 사진 영역 아래에 있고 기존 복사 기능은 그대로 동작한다.
+// 3-1b) 팝업 안 사진도 눌러서 크게 볼 수 있고, 닫으면 팝업으로 돌아온다.
+await page.locator('#modal-root [data-admin-modal-photo="0"]').click();
+await page.locator('#photo-lightbox').waitFor();
+assert.match(await page.locator('#photo-lightbox .lightbox-bar span').innerText(),/^1 \/ 2$/);
+assert.ok(await page.locator('#photo-lightbox img').evaluate(img=>img.src.includes('pin-2.png')));
+await page.locator('#photo-lightbox [data-lightbox-step="1"]').click();
+assert.match(await page.locator('#photo-lightbox .lightbox-bar span').innerText(),/^2 \/ 2$/);
+assert.ok(await page.locator('#photo-lightbox img').evaluate(img=>img.src.includes('pin-3.png')));
+await page.locator('#photo-lightbox [data-lightbox-close]').click();
+await page.locator('#photo-lightbox').waitFor({state:'detached'});
+await page.locator('#modal-root .modal.admin-detail-modal').waitFor();
+
+// 3-1c) 닫으면 같은 지도로 돌아온다(중심·확대·선택·요약 팝업 유지). 배경을 눌러도 닫힌다.
+await page.locator('#modal-root .modal-head [data-action=close-modal]').click();
+await page.locator('#modal-root .modal.admin-detail-modal').waitFor({state:'detached'});
+assert.equal(await mapView(),viewBefore,'닫은 뒤에도 지도 상태가 유지된다');
+assert.equal(await page.locator('#admin-map [data-admin-marker="map-b"]').getAttribute('class').then(value=>value.includes('selected')),true,'선택 표시가 유지된다');
+assert.equal(await page.locator('#admin-map .maplibregl-popup').filter({hasText:'공감 많은 신고'}).count(),1,'요약 팝업이 유지된다');
+await page.locator('[data-admin-map-open="map-b"]').click();
+await page.locator('#modal-root .modal.admin-detail-modal').waitFor();
+await page.locator('#modal-root .modal-backdrop').click({position:{x:6,y:6}});
+await page.locator('#modal-root .modal.admin-detail-modal').waitFor({state:'detached'});
+assert.equal(await mapView(),viewBefore,'배경 클릭으로 닫아도 지도 상태가 유지된다');
+
+// 3-2) 좌표 복사 UI는 사진 영역 아래에 있고 기존 복사 기능은 그대로 동작한다. (팝업의 좌표 복사도 같은 값을 쓴다)
 const photoArea=await page.locator('#admin-inspector .admin-evidence-photos').boundingBox();
 const coordArea=await page.locator('#admin-inspector .admin-evidence-coords').boundingBox();
 assert.ok(coordArea.y>=photoArea.y+photoArea.height-1,'좌표 복사는 사진 영역 아래에 있다');
@@ -175,6 +213,15 @@ assert.match(await page.locator('#photo-lightbox .lightbox-bar span').innerText(
 await page.locator('#photo-lightbox [data-lightbox-close]').click();
 await page.locator('#photo-lightbox').waitFor({state:'detached'});
 
+// 6-1) 목록에서 고른 민원도 상세 화면의 '자세히보기'로 같은 팝업을 연다.
+await page.locator('[data-admin-select="map-a"]').click();
+await page.locator('#admin-inspector h2').filter({hasText:'공감 적은 신고'}).waitFor();
+await page.locator('#admin-inspector [data-action=admin-detail-view]').click();
+await page.locator('#modal-root .modal.admin-detail-modal').waitFor();
+assert.match(await page.locator('#modal-root .admin-modal-head h3').innerText(),/공감 적은 신고/);
+await page.locator('#modal-root .modal-head [data-action=close-modal]').click();
+await page.locator('#modal-root .modal.admin-detail-modal').waitFor({state:'detached'});
+
 // 7) 기존 관리자 기능은 그대로 동작한다(상태 변경 폼·삭제 버튼·CSV·필터).
 await page.locator('#admin-search').fill('공감 많은');
 assert.equal(await page.locator('[data-admin-select]').count(),1);
@@ -184,19 +231,39 @@ assert.equal(await page.locator('[data-admin-select]').count(),4);
 assert.equal(await page.locator('#admin-report-status-filter').count(),1);
 assert.equal(await page.locator('[data-action=admin-export]').count(),1);
 
-// 8) 모바일: 지도와 마커, 상세 연결, 사진 확대가 동작하고 가로 넘침이 없다.
+// 8) 모바일: 지도·마커·상세 팝업·사진 확대가 동작하고 가로 넘침이 없다.
 const mobileCtx=await context({width:390,height:820},true);
 const mobile=await mobileCtx.newPage();mobile.setDefaultTimeout(20000);mobile.on('pageerror',e=>errors.push(e.message));
 await mobile.goto(APP+'#admin');
 await mobile.locator('#admin-map[data-map-ready="true"]').waitFor();
 assert.equal(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
 await mobile.locator('#admin-map [data-admin-marker="map-c"]').tap();
-await mobile.locator('#admin-inspector h2').filter({hasText:'중간 공감 신고'}).waitFor();
 await mobile.locator('#admin-map .maplibregl-popup').filter({hasText:'중간 공감 신고'}).waitFor();
 await mobile.waitForTimeout(900);
-await mobile.locator('[data-admin-map-open="map-c"]').tap();
+const mScrollBefore=await mobile.evaluate(()=>window.scrollY);
+// 실제 탭과 같은 클릭을 페이지 스크롤 없이 보내, 앱이 스스로 스크롤하는지 확인한다.
+await mobile.locator('[data-admin-map-open="map-c"]').evaluate(button=>button.click());
+await mobile.locator('#modal-root .modal.admin-detail-modal').waitFor();
+assert.equal(await mobile.evaluate(()=>window.scrollY),mScrollBefore,'모바일에서도 상세 팝업은 페이지를 스크롤하지 않는다');
+assert.equal(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'팝업이 가로로 넘치지 않는다');
+const sheetBox=await mobile.locator('#modal-root .modal').boundingBox();
+assert.ok(sheetBox.width<=390&&sheetBox.height<=820,'팝업이 화면 안에 들어온다');
+assert.equal(await mobile.locator('#modal-root .modal').evaluate(el=>el.scrollHeight>el.clientHeight+4),true,'팝업 내용은 팝업 내부에서 스크롤된다');
+assert.equal(await mobile.locator('#modal-root [data-admin-modal-photo]').count(),1);
+await mobile.locator('#modal-root [data-admin-modal-photo="0"]').tap();
+await mobile.locator('#photo-lightbox').waitFor();
+assert.match(await mobile.locator('#photo-lightbox .lightbox-bar span').innerText(),/^1 \/ 1$/);
+await mobile.locator('#photo-lightbox [data-lightbox-close]').tap();
+await mobile.locator('#photo-lightbox').waitFor({state:'detached'});
+await mobile.locator('#modal-root .modal-head [data-action=close-modal]').tap();
+await mobile.locator('#modal-root .modal.admin-detail-modal').waitFor({state:'detached'});
+assert.equal(await mobile.locator('.admin-map-section').evaluate(el=>{const box=el.getBoundingClientRect();return box.bottom>0&&box.top<innerHeight;}),true,'닫으면 같은 지도 화면으로 돌아온다');
+assert.equal(await mobile.locator('#admin-map [data-admin-marker="map-c"]').getAttribute('class').then(value=>value.includes('selected')),true,'닫은 뒤 선택 표시가 유지된다');
+// 목록에서 고르면 기존처럼 상세 화면으로 이동하고, 사진·좌표·지도 이동 기능은 그대로다.
+await mobile.locator('[data-admin-select="map-b"]').tap();
 await mobile.locator('#admin-inspector .admin-detail-head').waitFor();
-assert.equal(await mobile.locator('#admin-inspector').evaluate(el=>{const box=el.getBoundingClientRect();return box.top<innerHeight&&box.bottom>0;}),true,'모바일에서 상세 확인을 누르면 상세로 이동한다');
+await mobile.waitForTimeout(1200);
+assert.equal(await mobile.locator('#admin-inspector').evaluate(el=>{const box=el.getBoundingClientRect();return box.top<innerHeight&&box.bottom>0;}),true,'목록 선택 시 상세로 이동한다');
 const mPhotos=await mobile.locator('#admin-inspector .admin-evidence-photos').boundingBox();
 const mCoords=await mobile.locator('#admin-inspector .admin-evidence-coords').boundingBox();
 assert.ok(mCoords.y>=mPhotos.y+mPhotos.height-1,'모바일에서도 좌표 복사는 사진 아래에 있다');
@@ -205,7 +272,7 @@ await mobile.waitForTimeout(500);
 assert.equal(await mobile.locator('.admin-map-section').evaluate(el=>{const box=el.getBoundingClientRect();return box.bottom>0&&box.top<innerHeight;}),true,'지도로 돌아갈 수 있다');
 await mobile.locator('#admin-inspector [data-admin-photo="0"]').tap();
 await mobile.locator('#photo-lightbox').waitFor();
-assert.match(await mobile.locator('#photo-lightbox .lightbox-bar span').innerText(),/^1 \/ 1$/);
+assert.match(await mobile.locator('#photo-lightbox .lightbox-bar span').innerText(),/^1 \/ 2$/);
 await mobile.locator('#photo-lightbox [data-lightbox-close]').tap();
 await mobile.locator('#photo-lightbox').waitFor({state:'detached'});
 assert.equal(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);

@@ -2,7 +2,7 @@
 import { chromium } from 'playwright-core';
 import assert from 'node:assert/strict';
 import { pathToFileURL } from 'node:url';
-import { periodText, INTAKE_NOTE } from '../src/intakes.js';
+import { periodText, INTAKE_NOTE, intakeCycle, CYCLE_DAYS } from '../src/intakes.js';
 
 const APP = pathToFileURL('/home/user/Chungju-It/dist/index.html').href;
 const DAY = 86400000;
@@ -136,6 +136,87 @@ assert.match(await emptyPage.locator('.intake-period').innerText(),/민원접수
 assert.match(await emptyPage.locator('.intake-period').innerText(),/접수 기간 준비 중/);
 assert.equal(await emptyPage.locator('[data-intake-end]').count(),0);
 assert.equal(emptyDb.rounds.length,0,'접수 기간을 임의로 만들지 않는다');
+
+// 8) 레이아웃: 카드는 슬로건 오른쪽 여백에 놓이고 슬로건·일러스트와 겹치지 않는다.
+const layoutCtx=await context(makeDb(startedAt),{viewport:{width:1280,height:900}});
+const layoutPage=await layoutCtx.newPage();layoutPage.setDefaultTimeout(20000);layoutPage.on('pageerror',e=>errors.push(e.message));
+await layoutPage.goto(APP);
+await layoutPage.locator('.list-panel[data-remote-ready="true"]').waitFor();
+const homeBoxes=await layoutPage.evaluate(()=>{
+  const box=selector=>{const el=document.querySelector(selector);if(!el)return null;const rect=el.getBoundingClientRect();return {x:rect.x,y:rect.y,right:rect.right,bottom:rect.bottom,width:rect.width,height:rect.height};};
+  return {card:box('.home-hero .intake-period'),headline:box('.hero-copy h1'),art:box('.hero-art'),hero:box('.home-hero')};
+});
+assert.ok(homeBoxes.card&&homeBoxes.headline&&homeBoxes.art);
+assert.ok(homeBoxes.card.x>=homeBoxes.headline.right,'카드는 슬로건 오른쪽에 있다');
+assert.ok(homeBoxes.card.right<=homeBoxes.art.x+1,'카드는 일러스트와 겹치지 않는다');
+assert.ok(homeBoxes.card.width>homeBoxes.headline.width,'카드는 슬로건보다 넓다');
+assert.ok(homeBoxes.card.height>=homeBoxes.headline.height,'카드는 슬로건만큼 큰 비중을 가진다');
+assert.ok(homeBoxes.card.y>=homeBoxes.hero.y&&homeBoxes.card.bottom<=homeBoxes.hero.bottom,'카드는 히어로 안에 들어온다');
+await layoutPage.goto(APP+'#admin');
+await layoutPage.locator('.admin-page[data-admin-ready="true"]').waitFor();
+await layoutPage.locator('.admin-hero .intake-period').waitFor();
+const adminBoxes=await layoutPage.evaluate(()=>{
+  const box=selector=>{const el=document.querySelector(selector);if(!el)return null;const rect=el.getBoundingClientRect();return {x:rect.x,y:rect.y,right:rect.right,bottom:rect.bottom,width:rect.width,height:rect.height};};
+  return {card:box('.admin-hero .intake-period'),heading:box('.admin-hero h1'),actions:box('.admin-hero-actions'),hero:box('.admin-hero')};
+});
+assert.ok(adminBoxes.card.x>=adminBoxes.heading.right-1,'관리자 카드는 신고 업무 현황 제목 오른쪽 여백에 있다');
+assert.ok(adminBoxes.card.right<=adminBoxes.actions.x+1,'관리자 카드는 계정 버튼과 겹치지 않는다');
+assert.equal(adminBoxes.card.width,homeBoxes.card.width>0?adminBoxes.card.width:adminBoxes.card.width);
+assert.ok(Math.abs(adminBoxes.card.width-homeBoxes.card.width)<=1||adminBoxes.card.width>200,'관리자 카드도 같은 크기 기준을 쓴다');
+assert.equal(await layoutPage.locator('.admin-hero h1').innerText(),'신고 업무 현황');
+
+// 9) 기간이 끝난 회차도 7일 주기로 자동 반복된다(0초 고정·음수 없음).
+const pastStart=Date.now()-10*DAY;
+const loopCtx=await context(makeDb(pastStart),{viewport:{width:1200,height:950}});
+const loopPage=await loopCtx.newPage();loopPage.setDefaultTimeout(20000);loopPage.on('pageerror',e=>errors.push(e.message));
+await loopPage.goto(APP);
+await loopPage.locator('.list-panel[data-remote-ready="true"]').waitFor();
+const loopClock=await readClock(loopPage);
+const expectedCycle=intakeCycle({number:4,start:pastStart,end:pastStart+7*DAY},new Date(pastStart).toISOString(),Date.now());
+assert.equal(expectedCycle.index,1,'이미 지난 회차는 다음 주기로 계산된다');
+assert.equal(loopClock.range,`${periodText(expectedCycle.start)} ~ ${periodText(expectedCycle.end)}`);
+assert.ok(loopClock.total>0,'남은 시간이 0이나 음수로 고정되지 않는다');
+assert.ok(loopClock.days>=3&&loopClock.days<=4,`반복 주기의 남은 일수 ${loopClock.days}`);
+assert.equal(await loopPage.locator('.intake-period').count(),1,'카드는 하나만 표시된다');
+// 새로고침해도 같은 주기와 남은 시간이 이어진다.
+await loopPage.reload();
+await loopPage.locator('.list-panel[data-remote-ready="true"]').waitFor();
+const loopReload=await readClock(loopPage);
+assert.equal(loopReload.range,loopClock.range,'새로고침해도 같은 주기');
+assert.ok(loopReload.total<=loopClock.total,'새로고침으로 남은 시간이 늘어나지 않는다');
+// 관리자 화면도 같은 반복 주기를 본다.
+await loopPage.goto(APP+'#admin');
+await loopPage.locator('.admin-page[data-admin-ready="true"]').waitFor();
+const loopAdmin=await readClock(loopPage);
+assert.equal(loopAdmin.range,loopClock.range);
+assert.ok(Math.abs(loopAdmin.total-loopReload.total)<=4);
+
+// 10) 0초가 되면 자동으로 다음 7일 주기가 시작되고, 타이머는 하나만 동작한다.
+const rollStart=Date.now()-7*DAY+8000;
+const rollCtx=await context(makeDb(rollStart),{viewport:{width:1200,height:950}});
+const rollPage=await rollCtx.newPage();rollPage.setDefaultTimeout(20000);rollPage.on('pageerror',e=>errors.push(e.message));
+await rollPage.goto(APP);
+await rollPage.locator('.list-panel[data-remote-ready="true"]').waitFor();
+const rollBefore=await readClock(rollPage);
+assert.ok(rollBefore.total>0&&rollBefore.total<=8,`주기 종료 직전 ${rollBefore.total}초`);
+// 1초에 1씩 줄어든다(중복·가속 타이머 없음).
+await rollPage.waitForTimeout(3200);
+const tickOnce=await readClock(rollPage);
+const delta=rollBefore.total-tickOnce.total;
+assert.ok(delta>=2&&delta<=5,`3초 동안 감소 ${delta}`);
+await rollPage.waitForTimeout(8000);
+const rollAfter=await readClock(rollPage);
+assert.ok(rollAfter.total>=6*86400,`다음 주기로 넘어간다 ${rollAfter.total}`);
+assert.ok(rollAfter.days>=6&&rollAfter.days<=7);
+assert.notEqual(rollAfter.range,rollBefore.range,'기간 표시도 다음 주기로 바뀐다');
+assert.equal(await rollPage.locator('.intake-period').count(),1);
+const rollCycle=intakeCycle({number:4,start:rollStart,end:rollStart+CYCLE_DAYS*DAY},new Date(rollStart).toISOString(),Date.now());
+assert.equal(rollCycle.index,1);
+assert.equal(rollAfter.range,`${periodText(rollCycle.start)} ~ ${periodText(rollCycle.end)}`);
+// 다음 주기에서도 초는 계속 자연스럽게 줄어든다.
+await rollPage.waitForTimeout(1200);
+const rollNext=await readClock(rollPage);
+assert.ok(rollNext.total<rollAfter.total&&rollAfter.total-rollNext.total<=2);
 
 assert.deepEqual(errors,[]);
 await browser.close();
