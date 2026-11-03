@@ -1,0 +1,142 @@
+// 민원접수기간·7일 카운트다운: 사용자/관리자 동일 표시, 초 단위 감소, 새로고침 유지, 서버 시각 기준.
+import { chromium } from 'playwright-core';
+import assert from 'node:assert/strict';
+import { pathToFileURL } from 'node:url';
+import { periodText, INTAKE_NOTE } from '../src/intakes.js';
+
+const APP = pathToFileURL('/home/user/Chungju-It/dist/index.html').href;
+const DAY = 86400000;
+const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a8XcAAAAASUVORK5CYII=','base64');
+const mapStyle={version:8,sources:{},layers:[]};
+const now=()=>new Date().toISOString();
+const baseHeaders={'access-control-allow-origin':'*','access-control-allow-headers':'authorization,content-type,x-page-session','access-control-allow-methods':'POST,OPTIONS,GET,PUT,DELETE'};
+
+function makeDb(startedAt){
+  const db=Object.fromEntries(['reports','comments','supports','favorites','profiles','rounds','updates','admin-tasks'].map(name=>[name,[]]));
+  db.rounds.push({id:'round-1',revision:1,created_at:new Date(startedAt).toISOString(),updated_at:new Date(startedAt).toISOString(),data:{number:4,start:startedAt,end:startedAt+7*DAY,nextDays:7,history:[]}});
+  db.reports.push({id:'intake-report',revision:1,created_at:new Date(startedAt+3600000).toISOString(),updated_at:now(),data:{category:'청결',title:'접수 기간 확인 신고',detail:'접수 기간 확인용 신고입니다.',location:'충주시 호암동',lat:36.9701,lng:127.9321,status:'공감모집',clientId:'intake-device',image:'https://www.koosik.kr/public/p1.png',images:['https://www.koosik.kr/public/p1.png']}});
+  return db;
+}
+
+function apiRoute(db,serverOffsetMs){
+  return async route=>{
+    const req=route.request(),url=new URL(req.url()),method=req.method();
+    const headers={...baseHeaders,...(Number.isFinite(serverOffsetMs)?{'access-control-expose-headers':'date',date:new Date(Date.now()+serverOffsetMs).toUTCString()}:{})};
+    if(method==='OPTIONS')return route.fulfill({status:204,headers});
+    const send=(body,status=200)=>route.fulfill({status,headers,contentType:'application/json',body:JSON.stringify(body)});
+    if(url.pathname.startsWith('/public/'))return route.fulfill({status:200,headers,contentType:'image/png',body:png});
+    if(!/^Bearer /.test(req.headers().authorization||''))return send({error:'unauthorized'},401);
+    if(url.pathname.endsWith('/auth/me'))return send({error:'expired'},401);
+    const match=url.pathname.match(/\/(protected\/)?collections\/([^/]+)(?:\/([^/]+))?$/);
+    if(!match)return send({error:'missing'},404);
+    if(match[1])return send({ok:true,items:[],next_offset:null});
+    const list=db[match[2]];
+    if(!list)return send({error:'missing'},404);
+    if(method==='GET'&&!match[3])return send({ok:true,items:list,next_offset:null});
+    if(method==='GET'){const item=list.find(entry=>entry.id===decodeURIComponent(match[3]));return item?send({ok:true,item}):send({error:'not found'},404);}
+    return send({error:'unsupported'},404);
+  };
+}
+
+async function context(db,{viewport={width:1200,height:950},hasTouch=false,serverOffsetMs}={}){
+  const ctx=await browser.newContext({viewport,hasTouch,isMobile:hasTouch,reducedMotion:'reduce'});
+  await ctx.route('https://tiles.openfreemap.org/**',route=>route.request().url().includes('/styles/')?route.fulfill({status:200,headers:{'access-control-allow-origin':'*'},contentType:'application/json',body:JSON.stringify(mapStyle)}):route.abort());
+  await ctx.route('https://api.mymemory.translated.net/**',route=>route.fulfill({status:200,headers:{'access-control-allow-origin':'*'},contentType:'application/json',body:JSON.stringify({responseStatus:200,responseData:{translatedText:new URL(route.request().url()).searchParams.get('q')||''}})}));
+  await ctx.route('https://www.koosik.kr/**',apiRoute(db,serverOffsetMs));
+  await ctx.addInitScript(()=>{try{localStorage.setItem('chungju-entry-seen','1');localStorage.setItem('chungju-language-chosen','1');}catch{}});
+  return ctx;
+}
+
+const readClock=async page=>{
+  await page.locator('[data-intake-end]').waitFor();
+  const text=async selector=>((await page.locator(selector).innerText())||'').trim();
+  const days=Number((await text('[data-intake-days]')).replace(/[^0-9]/g,''));
+  const hours=Number((await text('[data-intake-hours]')).replace(/[^0-9]/g,''));
+  const minutes=Number((await text('[data-intake-minutes]')).replace(/[^0-9]/g,''));
+  const seconds=Number((await text('[data-intake-seconds]')).replace(/[^0-9]/g,''));
+  const end=Number(await page.locator('[data-intake-end]').getAttribute('data-intake-end'));
+  return {days,hours,minutes,seconds,total:days*86400+hours*3600+minutes*60+seconds,end,
+    range:(await text('.intake-range')),note:(await text('.intake-note')),kicker:(await text('.intake-kicker'))};
+};
+
+const browser=await chromium.launch({args:['--no-sandbox','--disable-dev-shm-usage','--enable-webgl','--use-angle=swiftshader','--enable-unsafe-swiftshader'],...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{})});
+const errors=[];
+
+// 1) 사용자 화면: 서버에 저장된 회차(7일) 기간과 남은 시간을 보여 준다.
+const startedAt=Date.now()-3*3600000;
+const db=makeDb(startedAt);
+const ctx=await context(db);
+const page=await ctx.newPage();page.setDefaultTimeout(20000);page.on('pageerror',e=>errors.push(e.message));
+await page.goto(APP);
+await page.locator('.list-panel[data-remote-ready="true"]').waitFor();
+const first=await readClock(page);
+assert.equal(first.kicker,'민원접수기간');
+assert.equal(first.range,`${periodText(startedAt)} ~ ${periodText(startedAt+7*DAY)}`);
+assert.match(first.note,/접수 기간 동안 시민들의 공감을 많이 받은 민원부터 순차적으로 접수됩니다\./);
+assert.equal(first.note,INTAKE_NOTE);
+assert.equal(first.end,startedAt+7*DAY,'서버에 저장된 종료 시각을 그대로 쓴다');
+assert.equal(first.days,6,'3시간 지난 7일 기간은 D-6');
+assert.ok(Math.abs(first.total-(7*DAY/1000-3*3600))<=5,`남은 시간 ${first.total}`);
+assert.equal(await page.locator('.intake-period').count(),1,'메인 화면에 접수 기간 카드가 하나 표시된다');
+
+// 2) 초 단위로 줄어든다.
+const beforeTick=await readClock(page);
+await page.waitForTimeout(2100);
+const afterTick=await readClock(page);
+assert.ok(afterTick.total<beforeTick.total,`${beforeTick.total} → ${afterTick.total}`);
+assert.ok(beforeTick.total-afterTick.total<=4);
+
+// 3) 새로고침해도 타이머가 초기화되지 않는다.
+await page.reload();
+await page.locator('.list-panel[data-remote-ready="true"]').waitFor();
+const afterReload=await readClock(page);
+assert.ok(afterReload.total<first.total);
+assert.ok(Math.abs(afterReload.total-(7*DAY/1000-3*3600))<=60);
+
+// 4) 관리자 화면에도 같은 기간·같은 남은 시간이 표시된다.
+await page.goto(APP+'#admin');
+await page.locator('.admin-page[data-admin-ready="true"]').waitFor();
+const adminClock=await readClock(page);
+assert.equal(adminClock.range,first.range);
+assert.ok(Math.abs(adminClock.end-first.end)<1000);
+assert.ok(Math.abs(adminClock.total-afterReload.total)<=4,`${adminClock.total} vs ${afterReload.total}`);
+assert.equal(adminClock.kicker,'민원접수기간');
+
+// 5) 서버 시각 기준: 서버가 2시간 앞선 시각을 알려 주면 남은 시간도 2시간 적게 계산한다.
+const serverDb=makeDb(startedAt);
+const serverCtx=await context(serverDb,{serverOffsetMs:2*3600000});
+const serverPage=await serverCtx.newPage();serverPage.setDefaultTimeout(20000);serverPage.on('pageerror',e=>errors.push(e.message));
+await serverPage.goto(APP);
+await serverPage.locator('.list-panel[data-remote-ready="true"]').waitFor();
+const serverClock=await readClock(serverPage);
+const localExpected=7*DAY/1000-3*3600;
+assert.ok(Math.abs(serverClock.total-(localExpected-7200))<=90,`서버 기준 ${serverClock.total} vs ${localExpected-7200}`);
+assert.equal(serverClock.range,first.range,'표시 날짜는 서버에 저장된 기간 그대로다');
+
+// 6) 모바일에서도 같은 카드가 보이고 가로 넘침이 없다.
+const mobileCtx=await context(makeDb(startedAt),{viewport:{width:390,height:820},hasTouch:true});
+const mobile=await mobileCtx.newPage();mobile.setDefaultTimeout(20000);mobile.on('pageerror',e=>errors.push(e.message));
+await mobile.goto(APP);
+await mobile.locator('.list-panel[data-remote-ready="true"]').waitFor();
+const mobileClock=await readClock(mobile);
+assert.equal(mobileClock.range,first.range);
+assert.equal(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+await mobile.goto(APP+'#admin');
+await mobile.locator('.admin-page[data-admin-ready="true"]').waitFor();
+await mobile.locator('.intake-period').waitFor();
+assert.equal(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+
+// 7) 접수 기간 데이터가 아직 없으면 안내만 표시한다(임의 생성 없음).
+const emptyDb=Object.fromEntries(Object.keys(makeDb(startedAt)).map(name=>[name,[]]));
+const emptyCtx=await context(emptyDb);
+const emptyPage=await emptyCtx.newPage();emptyPage.setDefaultTimeout(20000);emptyPage.on('pageerror',e=>errors.push(e.message));
+await emptyPage.goto(APP);
+await emptyPage.locator('.list-panel[data-remote-ready="true"]').waitFor();
+assert.match(await emptyPage.locator('.intake-period').innerText(),/민원접수기간/);
+assert.match(await emptyPage.locator('.intake-period').innerText(),/접수 기간 준비 중/);
+assert.equal(await emptyPage.locator('[data-intake-end]').count(),0);
+assert.equal(emptyDb.rounds.length,0,'접수 기간을 임의로 만들지 않는다');
+
+assert.deepEqual(errors,[]);
+await browser.close();
+console.log('PASS: intake period card and 7-day countdown shared by citizen/admin, server time based');

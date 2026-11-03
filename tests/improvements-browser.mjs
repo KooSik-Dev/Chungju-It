@@ -1,5 +1,6 @@
 // Language gate/switcher, report severity, admin list + location map, collection scroll and mobile tabs.
 import { chromium } from 'playwright-core';
+import { pickReportPosition } from './helpers/position.mjs';
 import assert from 'node:assert/strict';
 import { pathToFileURL } from 'node:url';
 
@@ -144,7 +145,7 @@ await page.locator('[name=category]').selectOption('청결');
 await page.locator('[name=title]').fill('심각도 점검 신고');
 await page.locator('[name=detail]').fill('가스 냄새가 심하게 납니다.');
 await page.locator('[name=location]').fill('충주시 호암동');
-await page.locator('#report-form [type=submit]').click();
+await pickReportPosition(page);await page.locator('#report-form [type=submit]').click();
 await page.locator('.modal').waitFor({state:'detached'});
 const created=db.reports.find(entry=>entry.data.title==='심각도 점검 신고');
 assert.equal(created.data.severity,'urgent');
@@ -156,7 +157,7 @@ await page.locator('[data-edit-report]').click();
 await page.locator('#report-form').waitFor();
 assert.equal(await page.locator('[data-severity=urgent]').getAttribute('aria-checked'),'true');
 await page.locator('[data-severity=inconvenience]').click();
-await page.locator('#report-form [type=submit]').click();
+await pickReportPosition(page);await page.locator('#report-form [type=submit]').click();
 await page.locator('.modal').waitFor({state:'detached'});
 await page.waitForTimeout(300);
 assert.equal(db.reports.find(entry=>entry.id===createdId).data.severity,'inconvenience');

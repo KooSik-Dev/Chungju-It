@@ -1,5 +1,6 @@
 // Multiple photo upload/edit/gallery coverage against the built app and a mocked page API.
 import { chromium } from 'playwright-core';
+import { pickReportPosition } from './helpers/position.mjs';
 import assert from 'node:assert/strict';
 import { pathToFileURL } from 'node:url';
 
@@ -102,9 +103,9 @@ await page.locator('[name=category]').selectOption('청결');
 await page.locator('[name=title]').fill('사진 점검 신고');
 await page.locator('[name=detail]').fill('사진 4장');
 await page.locator('[name=location]').fill('충주시 호암동');
-await page.locator('[data-action=review-report]').click();
+await pickReportPosition(page);await page.locator('[data-action=review-report]').click();
 assert.match(await page.locator('#report-review').innerText(),/사진\s*4장/);
-await page.locator('#report-form [type=submit]').click();
+await pickReportPosition(page);await page.locator('#report-form [type=submit]').click();
 await page.locator('.modal').waitFor({state:'detached'});
 const created=db.reports.find(r=>r.data.title==='사진 점검 신고');
 assert.equal(created.data.images.length,4);
@@ -137,7 +138,7 @@ await page.locator('[data-edit-report]').click();
 assert.equal(await thumbs(),4);
 for(let i=0;i<4;i++)await page.locator('[data-photo-remove-existing="0"]').click();
 assert.equal(await thumbs(),0);
-await page.locator('#report-form [type=submit]').click();
+await pickReportPosition(page);await page.locator('#report-form [type=submit]').click();
 await page.locator('.modal').waitFor({state:'detached'});
 const cleaned=db.reports.find(r=>r.id===created.id);
 assert.deepEqual(cleaned.data.images,[]);
@@ -148,10 +149,10 @@ await page.locator(`[data-detail="${created.id}"]`).first().click();
 await page.locator('[data-edit-report]').click();
 uploadMode='413';
 await page.locator('#photo-input').setInputFiles([file(8),file(9)]);
-await page.locator('#report-form [type=submit]').click();
+await pickReportPosition(page);await page.locator('#report-form [type=submit]').click();
 await page.locator('#report-api-status').filter({hasText:/초과|확인/}).waitFor();
 assert.equal(await page.locator('#report-form [type=submit]').isDisabled(),false);
-await page.locator('#report-form [type=submit]').click();
+await pickReportPosition(page);await page.locator('#report-form [type=submit]').click();
 await page.locator('.modal').waitFor({state:'detached'});
 assert.equal(db.reports.find(r=>r.id===created.id).data.images.length,2);
 
@@ -165,7 +166,7 @@ assert.equal(await page.locator('#photo-previews .photo-thumb img').first().getA
 await page.locator('[name=title]').fill('예전 단일 사진 신고 수정');
 await page.locator('#photo-input').setInputFiles([file(10)]);
 assert.equal(await thumbs(),2);
-await page.locator('#report-form [type=submit]').click();
+await pickReportPosition(page);await page.locator('#report-form [type=submit]').click();
 await page.locator('.modal').waitFor({state:'detached'});
 const legacy=db.reports.find(r=>r.id==='legacy-photo');
 assert.equal(legacy.data.images.length,2);
@@ -176,7 +177,7 @@ assert.equal(legacy.data.image,legacyImage);
 await page.locator('[data-detail="legacy-photo"]').first().click();
 await page.locator('[data-edit-report]').click();
 await page.locator('[name=location]').fill('충주시 칠금동 2');
-await page.locator('#report-form [type=submit]').click();
+await pickReportPosition(page);await page.locator('#report-form [type=submit]').click();
 await page.locator('.modal').waitFor({state:'detached'});
 assert.equal(db.reports.find(r=>r.id==='legacy-photo').data.image,legacyImage);
 

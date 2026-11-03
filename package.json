@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "node --test tests/*.test.js",
-    "test:browser": "node tests/collection-browser.mjs && node tests/auth-protected-browser.mjs && node tests/admin-browser.mjs && node tests/photos-browser.mjs && node tests/improvements-browser.mjs && node tests/admin-map-browser.mjs"
+    "test:browser": "node tests/collection-browser.mjs && node tests/auth-protected-browser.mjs && node tests/admin-browser.mjs && node tests/photos-browser.mjs && node tests/improvements-browser.mjs && node tests/admin-map-browser.mjs && node tests/report-position-browser.mjs && node tests/intake-browser.mjs"
   },
   "devDependencies": {
     "playwright-core": "^1.64.1",

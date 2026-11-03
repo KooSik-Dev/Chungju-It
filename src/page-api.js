@@ -1,3 +1,4 @@
+import { noteServerTime } from './server-clock.js';
 // This page token is public; user sessions authorize protected resources.
 // It is intentionally shipped in client-side code and must never be used to protect private data.
 export const PAGE_API_URL='https://www.koosik.kr/api/page/%EC%9D%BC%EB%8B%A8-%ED%85%8C%EC%8A%A4%ED%8A%B8%EC%9E%84-%EC%95%84%EB%A7%88';
@@ -26,9 +27,11 @@ export async function pageRequest(path='',options={}) {
  try{
   let response;try{response=await fetch(PAGE_API_URL+path,{method,headers,body,signal:controller.signal,...((path.startsWith('/auth/')||path.startsWith('/protected/'))?{referrerPolicy:'same-origin'}:{})});}
   catch{throw new ApiError(method==='GET'?'서버에 연결할 수 없어요. 네트워크 연결을 확인하거나 잠시 후 다시 시도해 주세요.':'연결을 확인할 수 없습니다. 저장 여부를 목록에서 확인해 주세요.',{uncertain:method!=='GET'});}
+  try{const header=response.headers.get('date');if(header){const ms=Date.parse(header);if(Number.isFinite(ms))noteServerTime(ms);}}catch{}
   let result;try{result=await response.json();}catch{if(response.ok)throw new ApiError('응답을 확인하지 못했습니다. 목록에서 저장 여부를 확인해 주세요.',{uncertain:method!=='GET'});result={};}
   if(!response.ok){const detail=typeof result?.error==='string'?result.error.slice(0,200):'';throw new ApiError(`${statusMessages[response.status]||'페이지 API 요청에 실패했습니다.'}${detail?' '+detail:''} (${response.status})`,{status:response.status,uncertain:method!=='GET'&&response.status>=500});}
   if(result?.ok===false)throw new ApiError('요청을 처리하지 못했습니다. 저장 여부를 확인해 주세요.',{status:response.status,uncertain:method!=='GET'});
+  try{const stamp=Date.parse(String((method==='POST'?result?.item?.created_at:method==='PUT'?result?.item?.updated_at:'')||''));if(Number.isFinite(stamp)&&Math.abs(stamp-Date.now())<24*60*60*1000)noteServerTime(stamp);}catch{}
   return result;
  }finally{clearTimeout(timer);}
 }

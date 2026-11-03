@@ -118,6 +118,29 @@ await page.locator('#admin-inspector h2').filter({hasText:'공감 많은 신고'
 assert.equal(await page.locator('[data-admin-select="map-b"]').getAttribute('class').then(value=>value.includes('selected')),true);
 assert.equal(await page.locator('#admin-map [data-admin-marker="map-b"]').getAttribute('class').then(value=>value.includes('selected')),true);
 
+// 3-1) 마커 클릭 뒤에도 팝업이 열려 있고, '상세 확인'을 누르면 같은 민원의 상세가 열린다.
+await page.locator('#admin-map .maplibregl-popup').filter({hasText:'공감 많은 신고'}).waitFor();
+assert.equal(await page.locator('[data-admin-map-open="map-b"]').count(),1);
+await page.locator('[data-admin-map-open="map-b"]').click();
+await page.locator('#admin-inspector .admin-detail-head h2').filter({hasText:'공감 많은 신고'}).waitFor();
+assert.match(await page.locator('#admin-inspector').innerText(),/공감 많은 신고/);
+assert.match(await page.locator('#admin-inspector').innerText(),/공감 많은 신고 상세 내용입니다/);
+assert.equal(await page.evaluate(()=>document.activeElement?.tagName+'|'+(document.activeElement?.textContent||'')),'H2|공감 많은 신고','상세로 이동하면 제목으로 초점이 간다');
+assert.equal(await page.locator('#admin-inspector [data-admin-photo]').count(),2,'상세에는 저장된 사진이 모두 보인다');
+
+// 3-2) 좌표 복사 UI는 사진 영역 아래에 있고 기존 복사 기능은 그대로 동작한다.
+const photoArea=await page.locator('#admin-inspector .admin-evidence-photos').boundingBox();
+const coordArea=await page.locator('#admin-inspector .admin-evidence-coords').boundingBox();
+assert.ok(coordArea.y>=photoArea.y+photoArea.height-1,'좌표 복사는 사진 영역 아래에 있다');
+assert.ok(coordArea.y>photoArea.y,'사진과 겹치지 않는다');
+assert.ok(Math.abs(coordArea.x-photoArea.x)<=2,'사진과 같은 폭 기준으로 정렬된다');
+assert.equal(await page.locator('#admin-inspector .admin-report-evidence button[data-action="copy-admin-location"]').count(),1);
+await page.evaluate(()=>{window.__copied=null;Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async value=>{window.__copied=value;}}});});
+await page.locator('#admin-inspector [data-action=copy-admin-location]').click();
+await page.waitForFunction(()=>typeof window.__copied==='string');
+assert.equal(await page.evaluate(()=>window.__copied),'36.9512, 127.8712','저장된 좌표를 그대로 복사한다');
+await page.locator('#toast').filter({hasText:'복사'}).waitFor();
+
 // 4) 목록에서 민원을 클릭하면 지도가 그 위치로 이동·확대되고 팝업이 열린다.
 await page.locator('[data-admin-select="map-c"]').click();
 await page.locator('#admin-inspector h2').filter({hasText:'중간 공감 신고'}).waitFor();
@@ -169,6 +192,17 @@ await mobile.locator('#admin-map[data-map-ready="true"]').waitFor();
 assert.equal(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
 await mobile.locator('#admin-map [data-admin-marker="map-c"]').tap();
 await mobile.locator('#admin-inspector h2').filter({hasText:'중간 공감 신고'}).waitFor();
+await mobile.locator('#admin-map .maplibregl-popup').filter({hasText:'중간 공감 신고'}).waitFor();
+await mobile.waitForTimeout(900);
+await mobile.locator('[data-admin-map-open="map-c"]').tap();
+await mobile.locator('#admin-inspector .admin-detail-head').waitFor();
+assert.equal(await mobile.locator('#admin-inspector').evaluate(el=>{const box=el.getBoundingClientRect();return box.top<innerHeight&&box.bottom>0;}),true,'모바일에서 상세 확인을 누르면 상세로 이동한다');
+const mPhotos=await mobile.locator('#admin-inspector .admin-evidence-photos').boundingBox();
+const mCoords=await mobile.locator('#admin-inspector .admin-evidence-coords').boundingBox();
+assert.ok(mCoords.y>=mPhotos.y+mPhotos.height-1,'모바일에서도 좌표 복사는 사진 아래에 있다');
+await mobile.locator('[data-action=admin-map-back]').tap();
+await mobile.waitForTimeout(500);
+assert.equal(await mobile.locator('.admin-map-section').evaluate(el=>{const box=el.getBoundingClientRect();return box.bottom>0&&box.top<innerHeight;}),true,'지도로 돌아갈 수 있다');
 await mobile.locator('#admin-inspector [data-admin-photo="0"]').tap();
 await mobile.locator('#photo-lightbox').waitFor();
 assert.match(await mobile.locator('#photo-lightbox .lightbox-bar span').innerText(),/^1 \/ 1$/);
