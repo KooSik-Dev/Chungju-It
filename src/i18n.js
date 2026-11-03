@@ -120,7 +120,7 @@ const translations = {
  '저장 전 미리 보기':'Preview before saving',
  '저장 전 미리 보기 →':'Preview before saving →',
  '데이터가 25MB를 넘어 백업할 수 없어요.':'The data exceeds the 25 MB backup limit.',
- '저장 전 확인':'Review before saving',
+ '저장 전 확인':'Review before saving','심각도':'Severity','상황이 얼마나 긴급한지 골라 주세요. 관리자 화면에서 우선순위로 함께 확인합니다.':'Pick how urgent the situation is. Administrators use it to set priorities.','언어 변경':'Change language','언어를 선택해 주세요':'Choose your language','언어 선택':'Language','앱 전체에 적용할 언어를 선택해 주세요.':'Choose the language to use across the app.','지구본 버튼에서 언제든지 언어를 바꿀 수 있어요.':'You can change the language any time from the globe button.','선택한 언어는 이 기기에 저장되며, 지구본 버튼에서 언제든 바꿀 수 있어요.':'Your choice is saved on this device. Change it any time from the globe button.',
  '이 내용은 테스트이며 시청에 접수되지 않습니다.':'This is a test and will not be submitted to City Hall.',
  '좌표':'Coordinates',
  '사진 선택됨':'Photo selected',

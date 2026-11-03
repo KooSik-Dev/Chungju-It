@@ -1,4 +1,4 @@
-import { categories, statuses, imageFor } from './data.js';
+import { categories, statuses, imageFor, severityIds } from './data.js';
 import { safeImageUrl } from './page-api.js';
 
 export const collections={reports:'reports',comments:'comments',supports:'supports',favorites:'favorites',rounds:'rounds',profiles:'profiles',updates:'updates','admin-tasks':'admin-tasks'};
@@ -22,8 +22,9 @@ export function buildSharedData(lists,clientId,guest='충주시민5624',protecte
   if(!text(r.title,80)||!text(r.detail,1000)||!text(r.location,100)||!categories.slice(1).includes(r.category)||!Number.isFinite(r.lat)||r.lat<33||r.lat>39||!Number.isFinite(r.lng)||r.lng<124||r.lng>132){skipped++;continue;}
   if(r.image&&!safeImageUrl(r.image)&&!Object.values(imageFor).includes(r.image)){skipped++;continue;}
   const images=Array.isArray(r.images)?r.images.filter(url=>typeof url==='string'&&url.length<=2048&&(safeImageUrl(url)||Object.values(imageFor).includes(url))).slice(0,5):null;
+  const severity=severityIds.includes(r.severity)?r.severity:'';
   const id=item.protected?'protected:'+item.id:item.id,stamp=Date.parse(item.created_at);
-  reports.push({id,rawId:item.id,protected:item.protected,ownerName:item.protected?String(item.owner_name||''):'' ,revision:item.revision,category:r.category,title:r.title,detail:r.detail,location:r.location,lat:r.lat,lng:r.lng,image:r.image||(images&&images[0])||imageFor[r.category],...(images?{images}:{}),status:statuses.slice(1).includes(r.status)?r.status:'공감모집',likes:supports.get(id)?.size||0,test:true,translatePublic:!item.protected||item.visibility==='public',mine:item.protected?owns(item,user):r.clientId===clientId,createdAt:Number.isFinite(stamp)?stamp:0});
+  reports.push({id,rawId:item.id,protected:item.protected,ownerName:item.protected?String(item.owner_name||''):'' ,revision:item.revision,category:r.category,title:r.title,detail:r.detail,location:r.location,lat:r.lat,lng:r.lng,image:r.image||(images&&images[0])||imageFor[r.category],...(images?{images}:{}),status:statuses.slice(1).includes(r.status)?r.status:'공감모집',severity,likes:supports.get(id)?.size||0,test:true,translatePublic:!item.protected||item.visibility==='public',mine:item.protected?owns(item,user):r.clientId===clientId,createdAt:Number.isFinite(stamp)?stamp:0});
  }
  reports.sort((a,b)=>b.createdAt-a.createdAt||a.id.localeCompare(b.id));
  const reportIds=new Set(reports.map(r=>r.id)),favorites=[],favoriteItems=new Map();

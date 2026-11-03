@@ -12,6 +12,19 @@ export const initialReports = [
  {id:'r8',category:'보도·도로',status:'처리완료',title:'성서동 충주천 인도 보도블록 파손',location:'성서동 충주천 산책로',likes:156,image:'sidewalk.jpg',lat:36.9693,lng:127.9391},
  {id:'r9',category:'가로등',status:'공감모집',title:'호암지 산책로 가로등 여러 개 꺼짐',location:'호암동 호암지 산책로',likes:134,image:'streetlight.jpg',lat:36.962431,lng:127.9218675}
 ];
+// 신고 심각도: 하나의 신고에는 하나의 값만 저장합니다. 예전 신고에는 값이 없을 수 있습니다.
+export const severities = [
+ {id:'critical', emoji:'🔴', label:'매우 심각', en:'Very serious', desc:'즉각적인 확인과 조치가 필요한 상황', enDesc:'Needs immediate inspection and action'},
+ {id:'urgent', emoji:'🆘', label:'빠른 조치 시급', en:'Urgent', desc:'신속한 대응이 필요한 상황', enDesc:'Needs a fast response'},
+ {id:'danger', emoji:'⚠️', label:'위험함', en:'Hazardous', desc:'안전이나 주변 환경에 위험이 존재하는 상황', enDesc:'A hazard to safety or the surroundings'},
+ {id:'caution', emoji:'🟠', label:'주의가 필요함', en:'Needs attention', desc:'지속적인 관심과 확인이 필요한 상황', enDesc:'Needs ongoing checks'},
+ {id:'inconvenience', emoji:'🟡', label:'불편함', en:'Inconvenient', desc:'일상생활에서 불편을 유발하는 상황', enDesc:'Causes inconvenience in daily life'},
+];
+export const severityIds = severities.map(item => item.id);
+export const severityById = id => severities.find(item => item.id === id) || null;
+export const severityRank = id => { const index = severityIds.indexOf(id); return index < 0 ? severityIds.length : index; };
+export const severityLabel = (id, language) => { const item = severityById(id); if (!item) return ''; return language === 'en' ? item.en : item.label; };
+export const severityText = (id, language) => { const item = severityById(id); if (!item) return ''; return `${item.emoji} ${language === 'en' ? item.en : item.label}`; };
 export const imageFor = {'가로등':'streetlight.jpg','신호등':'traffic.jpg','시내버스':'bus.jpg','보도·도로':'sidewalk.jpg','주차':'parking.jpg','안전·유해환경':'school.jpg','청결':'river.jpg','공공시설':'station.jpg'};
 
 // Migrate only unmodified default coordinates; never overwrite user-created reports.

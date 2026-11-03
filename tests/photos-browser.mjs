@@ -15,7 +15,7 @@ const ctx=await browser.newContext({viewport:{width:1100,height:900},reducedMoti
 const page=await ctx.newPage();
 page.setDefaultTimeout(15000);
 page.on('pageerror',e=>errors.push(e.message));
-await ctx.addInitScript(()=>{try{localStorage.setItem('chungju-entry-seen','1');}catch{}});
+await ctx.addInitScript(()=>{try{localStorage.setItem('chungju-entry-seen','1');localStorage.setItem('chungju-language-chosen','1');}catch{}});
 await page.route('https://tiles.openfreemap.org/**',r=>r.abort());
 await page.route('https://api.mymemory.translated.net/**',r=>r.fulfill({status:200,headers:{'access-control-allow-origin':'*'},contentType:'application/json',body:JSON.stringify({responseStatus:200,responseData:{translatedText:'x'}})}));
 await page.route('https://www.koosik.kr/**',async route=>{
