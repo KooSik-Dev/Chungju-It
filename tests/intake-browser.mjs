@@ -178,6 +178,12 @@ assert.equal(loopClock.range,`${periodText(expectedCycle.start)} ~ ${periodText(
 assert.ok(loopClock.total>0,'남은 시간이 0이나 음수로 고정되지 않는다');
 assert.ok(loopClock.days>=3&&loopClock.days<=4,`반복 주기의 남은 일수 ${loopClock.days}`);
 assert.equal(await loopPage.locator('.intake-period').count(),1,'카드는 하나만 표시된다');
+// 상단 '마감까지'도 같은 7일 주기 기준으로 표시된다(0초 고정 없음).
+const topBar=await loopPage.locator('#round-countdown').innerText();
+const topMatch=topBar.match(/(\d+)일\s*(\d+)시간\s*(\d+)분\s*(\d+)초/);
+const topSeconds=topMatch?Number(topMatch[1])*86400+Number(topMatch[2])*3600+Number(topMatch[3])*60+Number(topMatch[4]):-1;
+assert.ok(topSeconds>0,`상단 마감까지가 0으로 멈추지 않는다 (${topBar.trim()})`);
+assert.ok(Math.abs(topSeconds-loopClock.total)<=2,`상단 마감까지와 카드의 남은 시간이 같다 ${topSeconds} vs ${loopClock.total}`);
 // 새로고침해도 같은 주기와 남은 시간이 이어진다.
 await loopPage.reload();
 await loopPage.locator('.list-panel[data-remote-ready="true"]').waitFor();
