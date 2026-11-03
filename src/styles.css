@@ -248,3 +248,62 @@ body.language-gate-open{overflow:hidden}
 /* 모바일 탭 터치 안정화: 더블탭 확대·지연 없이 바로 눌리도록 합니다. */
 .cycle-detail,.scope-tabs button,.ranking-tabs button,.category-scroll button,.mobile-nav>button,.mobile-switch button,.lang-trigger,.language-option,.severity-option,.admin-quick-filters button,.activity-tabs button,.admin-sort select{touch-action:manipulation}
 @media(max-width:800px){.cycle-detail{min-height:40px;display:inline-flex;align-items:center;justify-content:center}.ranking-tabs{overflow-x:auto;scrollbar-width:none}.ranking-tabs::-webkit-scrollbar{display:none}.ranking-tabs button{flex:0 0 auto;min-height:44px}}
+/* 심각도 선택: 세로 1열·동일 크기·대칭 여백 */
+.severity-field{margin:6px 0 18px}
+.severity-options{display:grid;grid-template-columns:1fr;gap:10px;padding:2px}
+.severity-option{display:grid;grid-template-columns:30px minmax(0,1fr) 22px;align-items:center;gap:12px;width:100%;min-height:70px;padding:14px 16px;border:1.5px solid #e6ecf4;border-radius:16px;background:#fff;font-family:inherit;text-align:left;cursor:pointer;transition:border-color .15s ease,background-color .15s ease,box-shadow .15s ease}
+.severity-emoji{font-size:20px;line-height:1;text-align:center;justify-self:center}
+.severity-copy{display:grid;gap:3px;min-width:0;text-align:left}
+.severity-copy strong{font-size:14px;font-weight:800;line-height:1.35;color:#233247}
+.severity-copy small{font-size:11.5px;line-height:1.5;color:#7b8aa1}
+.severity-check{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;border:1.5px solid #dbe3ee;background:#fff;color:transparent;font-size:11px;font-weight:900;line-height:1}
+.severity-check::after{content:'✓'}
+.severity-option:hover{border-color:#cfdcf1;background:#fafcff}
+.severity-option.active{border-color:var(--sev,#4167ec);background:#f3f7ff;box-shadow:0 6px 18px #26468a12}
+.severity-option.active .severity-check{border-color:var(--sev,#4167ec);background:var(--sev,#4167ec);color:#fff}
+.severity-option.active .severity-copy strong{color:#1b3f96}
+@media(max-width:800px){.severity-option{min-height:68px;padding:13px 14px;grid-template-columns:28px minmax(0,1fr) 20px;gap:10px}}
+/* 보관함 분류: 좌우 스크롤 안내 막대 */
+.activity-tabs-wrap{position:relative;margin:23px 0 18px}
+.activity-tabs-wrap .activity-tabs{margin:0;padding-bottom:3px}
+.activity-tabs-wrap::before,.activity-tabs-wrap::after{content:'';position:absolute;top:0;bottom:24px;width:26px;pointer-events:none;z-index:1;transition:opacity .18s ease;opacity:.95}
+.activity-tabs-wrap::before{left:-2px;background:linear-gradient(90deg,#fff,#fff0)}
+.activity-tabs-wrap::after{right:-2px;background:linear-gradient(270deg,#fff,#fff0)}
+.activity-tabs-wrap[data-at-start="true"]::before{opacity:0}
+.activity-tabs-wrap[data-at-end="true"]::after{opacity:0}
+.activity-tabs-hint{display:flex;align-items:center;gap:10px;margin-top:9px;padding:0 2px}
+.activity-tabs-hint[hidden]{display:none}
+.activity-tabs-rail{position:relative;flex:1;height:4px;border-radius:99px;background:#e8eef6;overflow:hidden}
+.activity-tabs-rail i{position:absolute;top:0;bottom:0;left:0;width:30%;border-radius:99px;background:#4167ec;transition:left .12s linear,width .12s ease}
+.activity-tabs-hint small{font-size:10.5px;font-weight:700;color:#8b98ab;white-space:nowrap}
+/* 관리자 민원 위치 지도 */
+.admin-map-section{margin:18px 0 20px;padding:20px 22px 22px;border:1px solid #e7ecf4;border-radius:22px;background:#fff}
+.admin-map-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+.admin-map-head h2{margin:6px 0 4px;font-size:20px;letter-spacing:-.02em}
+.admin-map-head p{margin:0;font-size:12px;color:#7b8aa1}
+.admin-map-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11.5px;font-weight:700;color:#5d6d84}
+.admin-map-meta b{color:#1f3f8f}
+.admin-map-meta>span{padding:6px 10px;border-radius:999px;background:#f1f5fc;border:1px solid #e2eaf6}
+.admin-map-meta .admin-map-missing{background:#fff8ef;border-color:#fbe7cf;color:#a9741f}
+.admin-map-fit{min-height:34px;padding:7px 12px;border-radius:10px;border:1px solid #dbe5f4;background:#fff;color:#3c5c92;font-size:11.5px;font-weight:800;font-family:inherit;cursor:pointer}
+.admin-map-fit:hover{background:#f4f8ff;border-color:#c5d8f4}
+.admin-map-frame{position:relative;border-radius:16px;overflow:hidden;border:1px solid #e6ecf4;background:#eef2f8}
+.admin-map{height:360px;width:100%}
+.admin-map-empty{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:6px;padding:24px;text-align:center;background:#f8fafd;color:#6d7c92}
+.admin-map-empty span{font-size:22px;color:#9fb0c6}
+.admin-map-empty strong{font-size:14px}
+.admin-map-empty p{margin:0;font-size:12px;color:#8a97a9}
+.admin-info-window small{display:block;font-size:10.5px;color:#8a97a9;margin:2px 0 6px}
+.admin-pin.selected{box-shadow:0 0 0 4px #2467e833,0 3px 9px #2d594952}
+@media(max-width:800px){.admin-map-section{padding:16px;border-radius:18px}.admin-map{height:260px}.admin-map-head h2{font-size:17px}}
+/* 관리자 목록 순위 배지 */
+.admin-row-top{align-items:center}
+.admin-rank-group{display:inline-flex;align-items:center;gap:6px;min-width:0}
+.rank-badge.admin-rank-badge{position:static;display:inline-flex;align-items:center;border-radius:8px;padding:4px 8px;font-size:10.5px;font-weight:850;background:#4268e8;color:#fff}
+.admin-rank-badge.rank-2{background:#6785cf}
+.admin-rank-badge.rank-3{background:#db9871}
+.admin-rank-none{font-size:10.5px;font-weight:700;color:#9aa6b8;border:1px dashed #e2e8f1;border-radius:8px;padding:3px 7px}
+.admin-evidence-photo{display:block;width:100%;padding:0;border:0;background:#eef2f7;border-radius:11px;overflow:hidden;cursor:zoom-in}
+.admin-evidence-photo img{display:block;width:100%;height:135px;object-fit:cover}
+.admin-evidence-photo:hover img{opacity:.92}
+.maplibregl-marker.selected,.admin-pin.selected{z-index:4}
