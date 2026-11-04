@@ -1,4 +1,4 @@
-// 민원접수기간·7일 카운트다운: 사용자/관리자 동일 표시, 초 단위 감소, 새로고침 유지, 서버 시각 기준.
+// 민원접수기간·2주 카운트다운: 사용자/관리자 동일 표시, 초 단위 감소, 새로고침 유지, 서버 시각 기준.
 import { chromium } from 'playwright-core';
 import assert from 'node:assert/strict';
 import { pathToFileURL } from 'node:url';
@@ -13,7 +13,7 @@ const baseHeaders={'access-control-allow-origin':'*','access-control-allow-heade
 
 function makeDb(startedAt){
   const db=Object.fromEntries(['reports','comments','supports','favorites','profiles','rounds','updates','admin-tasks'].map(name=>[name,[]]));
-  db.rounds.push({id:'round-1',revision:1,created_at:new Date(startedAt).toISOString(),updated_at:new Date(startedAt).toISOString(),data:{number:4,start:startedAt,end:startedAt+7*DAY,nextDays:7,history:[]}});
+  db.rounds.push({id:'round-1',revision:1,created_at:new Date(startedAt).toISOString(),updated_at:new Date(startedAt).toISOString(),data:{number:4,start:startedAt,end:startedAt+14*DAY,nextDays:14,history:[]}});
   db.reports.push({id:'intake-report',revision:1,created_at:new Date(startedAt+3600000).toISOString(),updated_at:now(),data:{category:'청결',title:'접수 기간 확인 신고',detail:'접수 기간 확인용 신고입니다.',location:'충주시 호암동',lat:36.9701,lng:127.9321,status:'공감모집',clientId:'intake-device',image:'https://www.koosik.kr/public/p1.png',images:['https://www.koosik.kr/public/p1.png']}});
   return db;
 }
@@ -62,7 +62,7 @@ const readClock=async page=>{
 const browser=await chromium.launch({args:['--no-sandbox','--disable-dev-shm-usage','--enable-webgl','--use-angle=swiftshader','--enable-unsafe-swiftshader'],...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{})});
 const errors=[];
 
-// 1) 사용자 화면: 서버에 저장된 회차(7일) 기간과 남은 시간을 보여 준다.
+// 1) 사용자 화면: 서버에 저장된 회차(2주) 기간과 남은 시간을 보여 준다.
 const startedAt=Date.now()-3*3600000;
 const db=makeDb(startedAt);
 const ctx=await context(db);
@@ -71,12 +71,12 @@ await page.goto(APP);
 await page.locator('.list-panel[data-remote-ready="true"]').waitFor();
 const first=await readClock(page);
 assert.equal(first.kicker,'민원접수기간');
-assert.equal(first.range,`${periodText(startedAt)} ~ ${periodText(startedAt+7*DAY)}`);
+assert.equal(first.range,`${periodText(startedAt)} ~ ${periodText(startedAt+14*DAY)}`);
 assert.match(first.note,/접수 기간 동안 시민들의 공감을 많이 받은 민원부터 순차적으로 접수됩니다\./);
 assert.equal(first.note,INTAKE_NOTE);
-assert.equal(first.end,startedAt+7*DAY,'서버에 저장된 종료 시각을 그대로 쓴다');
-assert.equal(first.days,6,'3시간 지난 7일 기간은 D-6');
-assert.ok(Math.abs(first.total-(7*DAY/1000-3*3600))<=5,`남은 시간 ${first.total}`);
+assert.equal(first.end,startedAt+14*DAY,'서버에 저장된 종료 시각을 그대로 쓴다');
+assert.equal(first.days,13,'3시간 지난 2주 기간은 D-13');
+assert.ok(Math.abs(first.total-(14*DAY/1000-3*3600))<=5,`남은 시간 ${first.total}`);
 assert.equal(await page.locator('.intake-period').count(),1,'메인 화면에 접수 기간 카드가 하나 표시된다');
 
 // 2) 초 단위로 줄어든다.
@@ -91,7 +91,7 @@ await page.reload();
 await page.locator('.list-panel[data-remote-ready="true"]').waitFor();
 const afterReload=await readClock(page);
 assert.ok(afterReload.total<first.total);
-assert.ok(Math.abs(afterReload.total-(7*DAY/1000-3*3600))<=60);
+assert.ok(Math.abs(afterReload.total-(14*DAY/1000-3*3600))<=60);
 
 // 4) 관리자 화면에도 같은 기간·같은 남은 시간이 표시된다.
 await page.goto(APP+'#admin');
@@ -109,7 +109,7 @@ const serverPage=await serverCtx.newPage();serverPage.setDefaultTimeout(20000);s
 await serverPage.goto(APP);
 await serverPage.locator('.list-panel[data-remote-ready="true"]').waitFor();
 const serverClock=await readClock(serverPage);
-const localExpected=7*DAY/1000-3*3600;
+const localExpected=14*DAY/1000-3*3600;
 assert.ok(Math.abs(serverClock.total-(localExpected-7200))<=90,`서버 기준 ${serverClock.total} vs ${localExpected-7200}`);
 assert.equal(serverClock.range,first.range,'표시 날짜는 서버에 저장된 기간 그대로다');
 
@@ -126,7 +126,7 @@ await mobile.locator('.admin-page[data-admin-ready="true"]').waitFor();
 await mobile.locator('.intake-period').waitFor();
 assert.equal(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
 
-// 7) 서버 회차 기록이 아직 없어도 고정 기준일 기준 7일 접수 기간을 보여 준다(데이터 임의 생성 없음).
+// 7) 서버 회차 기록이 아직 없어도 고정 기준일 기준 2주 접수 기간을 보여 준다(데이터 임의 생성 없음).
 const emptyDb=Object.fromEntries(Object.keys(makeDb(startedAt)).map(name=>[name,[]]));
 const emptyCtx=await context(emptyDb);
 const emptyPage=await emptyCtx.newPage();emptyPage.setDefaultTimeout(20000);emptyPage.on('pageerror',e=>errors.push(e.message));
@@ -138,7 +138,7 @@ assert.equal(/준비 중/.test(emptyText),false,'회차 기록이 없어도 준�
 const emptyClock=await readClock(emptyPage);
 const emptyFallback=fallbackCycle(Date.now());
 assert.equal(emptyClock.range,`${periodText(emptyFallback.start)} ~ ${periodText(emptyFallback.end)}`);
-assert.ok(emptyClock.total>0&&emptyClock.total<=CYCLE_DAYS*86400,'남은 시간은 0보다 크고 7일 이하');
+assert.ok(emptyClock.total>0&&emptyClock.total<=CYCLE_DAYS*86400,'남은 시간은 0보다 크고 14일 이하');
 const emptyTop=await emptyPage.locator('#round-countdown').innerText();
 assert.match(emptyTop,/\d+일\s*\d+시간\s*\d+분\s*\d+초/,'상단 마감 타이머도 함께 표시한다');
 assert.equal(emptyDb.rounds.length,0,'접수 기간을 임의로 만들지 않는다');
@@ -173,20 +173,20 @@ assert.equal(adminBoxes.card.width,homeBoxes.card.width>0?adminBoxes.card.width:
 assert.ok(Math.abs(adminBoxes.card.width-homeBoxes.card.width)<=1||adminBoxes.card.width>200,'관리자 카드도 같은 크기 기준을 쓴다');
 assert.equal(await layoutPage.locator('.admin-hero h1').innerText(),'신고 업무 현황');
 
-// 9) 기간이 끝난 회차도 7일 주기로 자동 반복된다(0초 고정·음수 없음).
+// 9) 기간이 끝난 회차도 2주 주기로 자동 반복된다(0초 고정·음수 없음).
 const pastStart=Date.now()-10*DAY;
 const loopCtx=await context(makeDb(pastStart),{viewport:{width:1200,height:950}});
 const loopPage=await loopCtx.newPage();loopPage.setDefaultTimeout(20000);loopPage.on('pageerror',e=>errors.push(e.message));
 await loopPage.goto(APP);
 await loopPage.locator('.list-panel[data-remote-ready="true"]').waitFor();
 const loopClock=await readClock(loopPage);
-const expectedCycle=intakeCycle({number:4,start:pastStart,end:pastStart+7*DAY},new Date(pastStart).toISOString(),Date.now());
-assert.equal(expectedCycle.index,1,'이미 지난 회차는 다음 주기로 계산된다');
+const expectedCycle=intakeCycle({number:4,start:pastStart,end:pastStart+14*DAY},new Date(pastStart).toISOString(),Date.now());
+assert.equal(expectedCycle.index,0,'지난 회차도 같은 2주 주기 안에서 계산된다');
 assert.equal(loopClock.range,`${periodText(expectedCycle.start)} ~ ${periodText(expectedCycle.end)}`);
 assert.ok(loopClock.total>0,'남은 시간이 0이나 음수로 고정되지 않는다');
 assert.ok(loopClock.days>=3&&loopClock.days<=4,`반복 주기의 남은 일수 ${loopClock.days}`);
 assert.equal(await loopPage.locator('.intake-period').count(),1,'카드는 하나만 표시된다');
-// 상단 '마감까지'도 같은 7일 주기 기준으로 표시된다(0초 고정 없음).
+// 상단 '마감까지'도 같은 2주 주기 기준으로 표시된다(0초 고정 없음).
 const topBar=await loopPage.locator('#round-countdown').innerText();
 const topMatch=topBar.match(/(\d+)일\s*(\d+)시간\s*(\d+)분\s*(\d+)초/);
 const topSeconds=topMatch?Number(topMatch[1])*86400+Number(topMatch[2])*3600+Number(topMatch[3])*60+Number(topMatch[4]):-1;
@@ -205,8 +205,8 @@ const loopAdmin=await readClock(loopPage);
 assert.equal(loopAdmin.range,loopClock.range);
 assert.ok(Math.abs(loopAdmin.total-loopReload.total)<=4);
 
-// 10) 0초가 되면 자동으로 다음 7일 주기가 시작되고, 타이머는 하나만 동작한다.
-const rollStart=Date.now()-7*DAY+8000;
+// 10) 0초가 되면 자동으로 다음 2주 주기가 시작되고, 타이머는 하나만 동작한다.
+const rollStart=Date.now()-14*DAY+8000;
 const rollCtx=await context(makeDb(rollStart),{viewport:{width:1200,height:950}});
 const rollPage=await rollCtx.newPage();rollPage.setDefaultTimeout(20000);rollPage.on('pageerror',e=>errors.push(e.message));
 await rollPage.goto(APP);
@@ -220,8 +220,8 @@ const delta=rollBefore.total-tickOnce.total;
 assert.ok(delta>=2&&delta<=5,`3초 동안 감소 ${delta}`);
 await rollPage.waitForTimeout(8000);
 const rollAfter=await readClock(rollPage);
-assert.ok(rollAfter.total>=6*86400,`다음 주기로 넘어간다 ${rollAfter.total}`);
-assert.ok(rollAfter.days>=6&&rollAfter.days<=7);
+assert.ok(rollAfter.total>=13*86400,`다음 주기로 넘어간다 ${rollAfter.total}`);
+assert.ok(rollAfter.days>=13&&rollAfter.days<=14);
 assert.notEqual(rollAfter.range,rollBefore.range,'기간 표시도 다음 주기로 바뀐다');
 assert.equal(await rollPage.locator('.intake-period').count(),1);
 const rollCycle=intakeCycle({number:4,start:rollStart,end:rollStart+CYCLE_DAYS*DAY},new Date(rollStart).toISOString(),Date.now());
@@ -234,4 +234,4 @@ assert.ok(rollNext.total<rollAfter.total&&rollAfter.total-rollNext.total<=2);
 
 assert.deepEqual(errors,[]);
 await browser.close();
-console.log('PASS: intake period card and 7-day countdown shared by citizen/admin, server time based');
+console.log('PASS: intake period card and 2-week countdown shared by citizen/admin, server time based');

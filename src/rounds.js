@@ -1,7 +1,8 @@
 // 회차는 브라우저 내부의 모의 집계입니다. 서버 접수나 실제 전달 기능은 없습니다.
 export const DAY = 24 * 60 * 60 * 1000;
+import { CYCLE_DAYS } from './intakes.js';
 export const roundDurations = [1, 7, 14, 30];
-export function createRound(now = Date.now(), number = 1, days = 7, history = []) {
+export function createRound(now = Date.now(), number = 1, days = CYCLE_DAYS, history = []) {
   return { number, start: now, end: now + days * DAY, nextDays: days, history };
 }
 export function validRound(value) {

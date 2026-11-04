@@ -15,14 +15,16 @@ export function intakeWindow(round, createdAt) {
   return { number: round.number, start, end: start + length, length, serverAnchored: anchored };
 }
 
-export const CYCLE_DAYS = 7;
+// 접수 기간 한 주기는 2주(14일)입니다. 새 회차와 회차 기록이 없을 때의 기본값으로 씁니다.
+export const CYCLE_DAYS = 14;
 
-// 접수 기간은 7일을 한 주기로 반복됩니다. 서버에 저장된 회차 시작 시각을 기준으로
+// 접수 기간은 회차에 저장된 기간(기본 2주)을 한 주기로 반복됩니다. 서버에 저장된 회차 시작 시각을 기준으로
 // 현재 주기를 계산하므로 접속 시점·기기와 무관하게 모두 같은 주기와 남은 시간을 봅니다.
+// (2주보다 짧게 저장된 옛 회차는 저장된 길이 그대로 반복해 기간 표시가 데이터와 어긋나지 않게 합니다.)
 export function intakeCycle(round, createdAt, now = Date.now()) {
   const base = intakeWindow(round, createdAt);
   if (!base) return null;
-  const cycle = CYCLE_DAYS * DAY;
+  const cycle = base.length;
   const anchor = base.start;
   const elapsed = Number(now) - anchor;
   const index = Number.isFinite(elapsed) && elapsed > 0 ? Math.floor(elapsed / cycle) : 0;
@@ -30,9 +32,10 @@ export function intakeCycle(round, createdAt, now = Date.now()) {
   return { index, start, end: start + cycle, length: cycle, anchor, base };
 }
 
-// 서버에 회차 기록이 아직 없을 때 쓰는 기준 시각입니다(2026-01-01 00:00 KST).
+// 서버에 회차 기록이 아직 없을 때 쓰는 기준 시각입니다(2026-01-05 00:00 KST, 월요일).
 // 브라우저마다 값이 달라지지 않도록 고정값을 쓰며, 서버 회차 기록이 생기면 그 값이 우선합니다.
-export const FALLBACK_ANCHOR = Date.UTC(2025, 11, 31, 15, 0, 0);
+// 회차 기록이 없을 때도 2주(14일) 주기로 접수 기간을 보여 주며, 주기는 항상 월요일에 시작합니다.
+export const FALLBACK_ANCHOR = Date.UTC(2026, 0, 4, 15, 0, 0);
 
 export function fallbackCycle(now = Date.now()) {
   const cycle = CYCLE_DAYS * DAY;
