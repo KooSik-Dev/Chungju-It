@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { intakeWindow, intakeCycle, countdownParts, periodText, INTAKE_NOTE, CYCLE_DAYS } from '../src/intakes.js';
+import { intakeWindow, intakeCycle, fallbackCycle, FALLBACK_ANCHOR, countdownParts, periodText, INTAKE_NOTE, CYCLE_DAYS } from '../src/intakes.js';
 
 const DAY = 24 * 60 * 60 * 1000;
 const start = Date.UTC(2026, 10, 2, 15, 0, 0); // 2026-11-03 00:00 KST
@@ -80,4 +80,21 @@ test('주기 기준 시각이 없으면 기간을 만들지 않는다', () => {
   // 기기 시계가 시작 시각보다 이전이어도 첫 주기로 계산한다.
   const early = intakeCycle(round, new Date(start).toISOString(), start - DAY);
   assert.deepEqual([early.index, early.start, early.end], [0, start, start + 7 * DAY]);
+});
+
+test('서버 회차 기록이 없을 때는 고정 기준일로 7일 주기를 계산한다', () => {
+  const anchor = fallbackCycle(FALLBACK_ANCHOR);
+  assert.deepEqual([anchor.index, anchor.start, anchor.end], [0, FALLBACK_ANCHOR, FALLBACK_ANCHOR + 7 * DAY]);
+  assert.equal(anchor.fallback, true);
+  // 어떤 시각이든 7일 주기 안의 같은 기간을 가리키고, 남은 시간은 7일을 넘지 않는다.
+  const sample = FALLBACK_ANCHOR + 123 * DAY + 5 * 3600 * 1000;
+  const win = fallbackCycle(sample);
+  assert.equal(win.start, FALLBACK_ANCHOR + Math.floor(123 / 7) * 7 * DAY);
+  assert.equal(win.end - win.start, 7 * DAY);
+  assert.ok(sample >= win.start && sample < win.end);
+  assert.ok(countdownParts(win.end, sample).totalSeconds > 0 && countdownParts(win.end, sample).totalSeconds <= 7 * 86400);
+  // 브라우저(기기) 시계와 무관하게 같은 값이 나온다.
+  assert.deepEqual(fallbackCycle(sample), fallbackCycle(sample));
+  // 기준일 이전이어도 첫 주기로 계산해 기간이 비지 않는다.
+  assert.deepEqual([fallbackCycle(FALLBACK_ANCHOR - DAY).index], [0]);
 });

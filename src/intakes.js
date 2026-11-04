@@ -30,6 +30,18 @@ export function intakeCycle(round, createdAt, now = Date.now()) {
   return { index, start, end: start + cycle, length: cycle, anchor, base };
 }
 
+// 서버에 회차 기록이 아직 없을 때 쓰는 기준 시각입니다(2026-01-01 00:00 KST).
+// 브라우저마다 값이 달라지지 않도록 고정값을 쓰며, 서버 회차 기록이 생기면 그 값이 우선합니다.
+export const FALLBACK_ANCHOR = Date.UTC(2025, 11, 31, 15, 0, 0);
+
+export function fallbackCycle(now = Date.now()) {
+  const cycle = CYCLE_DAYS * DAY;
+  const elapsed = Number(now) - FALLBACK_ANCHOR;
+  const index = Number.isFinite(elapsed) && elapsed > 0 ? Math.floor(elapsed / cycle) : 0;
+  const start = FALLBACK_ANCHOR + index * cycle;
+  return { index, start, end: start + cycle, length: cycle, anchor: FALLBACK_ANCHOR, fallback: true };
+}
+
 export function countdownParts(end, now = Date.now()) {
   const remaining = Math.max(0, Number(end) - Number(now));
   const totalSeconds = Number.isFinite(remaining) ? Math.ceil(remaining / 1000) : 0;

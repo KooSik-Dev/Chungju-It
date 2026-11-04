@@ -2,7 +2,7 @@
 import { chromium } from 'playwright-core';
 import assert from 'node:assert/strict';
 import { pathToFileURL } from 'node:url';
-import { periodText, INTAKE_NOTE, intakeCycle, CYCLE_DAYS } from '../src/intakes.js';
+import { periodText, INTAKE_NOTE, intakeCycle, fallbackCycle, CYCLE_DAYS } from '../src/intakes.js';
 
 const APP = pathToFileURL('/home/user/Chungju-It/dist/index.html').href;
 const DAY = 86400000;
@@ -126,16 +126,24 @@ await mobile.locator('.admin-page[data-admin-ready="true"]').waitFor();
 await mobile.locator('.intake-period').waitFor();
 assert.equal(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
 
-// 7) 접수 기간 데이터가 아직 없으면 안내만 표시한다(임의 생성 없음).
+// 7) 서버 회차 기록이 아직 없어도 고정 기준일 기준 7일 접수 기간을 보여 준다(데이터 임의 생성 없음).
 const emptyDb=Object.fromEntries(Object.keys(makeDb(startedAt)).map(name=>[name,[]]));
 const emptyCtx=await context(emptyDb);
 const emptyPage=await emptyCtx.newPage();emptyPage.setDefaultTimeout(20000);emptyPage.on('pageerror',e=>errors.push(e.message));
 await emptyPage.goto(APP);
 await emptyPage.locator('.list-panel[data-remote-ready="true"]').waitFor();
-assert.match(await emptyPage.locator('.intake-period').innerText(),/민원접수기간/);
-assert.match(await emptyPage.locator('.intake-period').innerText(),/접수 기간 준비 중/);
-assert.equal(await emptyPage.locator('[data-intake-end]').count(),0);
+const emptyText=await emptyPage.locator('.intake-period').innerText();
+assert.match(emptyText,/민원접수기간/);
+assert.equal(/준비 중/.test(emptyText),false,'회차 기록이 없어도 준비 중으로 표시하지 않는다');
+const emptyClock=await readClock(emptyPage);
+const emptyFallback=fallbackCycle(Date.now());
+assert.equal(emptyClock.range,`${periodText(emptyFallback.start)} ~ ${periodText(emptyFallback.end)}`);
+assert.ok(emptyClock.total>0&&emptyClock.total<=CYCLE_DAYS*86400,'남은 시간은 0보다 크고 7일 이하');
+const emptyTop=await emptyPage.locator('#round-countdown').innerText();
+assert.match(emptyTop,/\d+일\s*\d+시간\s*\d+분\s*\d+초/,'상단 마감 타이머도 함께 표시한다');
 assert.equal(emptyDb.rounds.length,0,'접수 기간을 임의로 만들지 않는다');
+const emptyAgain=await (async()=>{const ctx=await context(emptyDb);const p=await ctx.newPage();p.setDefaultTimeout(20000);p.on('pageerror',e=>errors.push(e.message));await p.goto(APP);await p.locator('.list-panel[data-remote-ready="true"]').waitFor();const clock=await readClock(p);await ctx.close();return clock;})();
+assert.equal(emptyAgain.end,emptyClock.end,'방문자마다 같은 접수 기간을 본다');
 
 // 8) 레이아웃: 카드는 슬로건 오른쪽 여백에 놓이고 슬로건·일러스트와 겹치지 않는다.
 const layoutCtx=await context(makeDb(startedAt),{viewport:{width:1280,height:900}});
